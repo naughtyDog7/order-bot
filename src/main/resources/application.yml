@@ -1,0 +1,21 @@
+bot:
+  bot-token: "bottoken"
+  username: "username"
+  usedLanguages:
+    - uz-UZ
+    - ru-RU
+
+---
+spring:
+  profiles: dev
+  datasource:
+    url: jdbc:h2:file:../data/demo
+    username: sa
+    driver-class-name: org.h2.Driver
+    password: sa
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate.dialect: org.hibernate.dialect.H2Dialect

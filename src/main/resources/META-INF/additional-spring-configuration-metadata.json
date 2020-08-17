@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "bot.usedLanguages",
+      "type": "java.util.List",
+      "description": "Language tags used for loading resource bundles into ResourceBundleFactory."
+    },
+    {
+      "name": "bot.bot-token",
+      "type": "java.lang.String",
+      "description": "Telegram bot token, can be received from @BotFather."
+    },
+    {
+      "name": "bot.username",
+      "type": "java.lang.String",
+      "description": "Telegram bot username."
+    }
+  ] }
