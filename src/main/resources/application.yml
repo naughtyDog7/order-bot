@@ -1,10 +1,14 @@
 bot:
-  bot-token: "bottoken"
-  username: "username"
+  bot-token:
+  username:
   usedLanguages:
     - uz-UZ
     - ru-RU
-
+jowi:
+  api-key:
+  api-secret:
+  api-url-v010:
+  api-url-v3:
 ---
 spring:
   profiles: dev
