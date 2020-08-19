@@ -43,6 +43,11 @@
 
 <!--		Dev dependencies		-->
 		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>annotations</artifactId>
+			<version>19.0.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-actuator</artifactId>
 		</dependency>
@@ -63,6 +68,15 @@
 			<optional>true</optional>
 		</dependency>
 
+<!--		Json dependencies		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-json</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+		</dependency>
 <!--		Other dependencies		-->
 		<dependency>
 			<groupId>org.telegram</groupId>
