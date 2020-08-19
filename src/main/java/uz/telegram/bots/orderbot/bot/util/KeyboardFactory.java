@@ -23,7 +23,7 @@ public class KeyboardFactory {
         List<String> langs = botProperties.getUsedLanguages();
         langs.add(""); //add empty string so it will load default resource bundle
         for (String lang : langs) {
-            ResourceBundle rb = rbf.getMessageBundle(Locale.forLanguageTag(lang));
+            ResourceBundle rb = rbf.getMessagesBundle(Locale.forLanguageTag(lang));
             EnumMap<KeyboardType, ReplyKeyboardMarkup> keyboards =
                     EnumSet.allOf(KeyboardType.class).stream()
                     .collect(Collectors.toMap(kt -> kt, kt -> kt.getReplyKeyboard(rb),
@@ -71,6 +71,16 @@ public class KeyboardFactory {
                 KeyboardRow keyboardButtons = new KeyboardRow();
                 keyboardButtons.add(rb.getString("btn-settings-language-choose"));
                 return new ReplyKeyboardMarkup(List.of(keyboardButtons));
+            }
+        },
+        CATEGORIES_TEMPLATE_KEYBOARD {
+            @Override
+            ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
+                KeyboardRow keyboardButtons1 = new KeyboardRow();
+                keyboardButtons1.add(rb.getString("btn-basket"));
+                KeyboardRow keyboardButtons2 = new KeyboardRow();
+                keyboardButtons2.add(rb.getString("btn-cancel-order"));
+                return new ReplyKeyboardMarkup(List.of(keyboardButtons1, keyboardButtons2));
             }
         };
 

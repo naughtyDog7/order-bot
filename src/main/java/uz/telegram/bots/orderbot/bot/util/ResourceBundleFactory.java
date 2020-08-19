@@ -42,7 +42,7 @@ public class ResourceBundleFactory {
         return messagesResourceBundles.get(langISO);
     }
 
-    public ResourceBundle getMessageBundle(Locale locale) {
+    public ResourceBundle getMessagesBundle(Locale locale) {
         String langISO = locale.getISO3Language();
         return getMessagesBundle(langISO);
     }
