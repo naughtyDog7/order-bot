@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @Entity
 @RequiredArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 public class Restaurant {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

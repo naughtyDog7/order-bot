@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Component
 public class KeyboardFactory {
 
-    Map<String, Map<KeyboardType, ReplyKeyboardMarkup>> keyboardsByLang = new HashMap<>();
+    private Map<String, Map<KeyboardType, ReplyKeyboardMarkup>> keyboardsByLang = new HashMap<>();
     private final KeyboardUtil ku;
     private final ResourceBundleFactory rbf;
 
@@ -26,8 +26,8 @@ public class KeyboardFactory {
             ResourceBundle rb = rbf.getMessagesBundle(Locale.forLanguageTag(lang));
             EnumMap<KeyboardType, ReplyKeyboardMarkup> keyboards =
                     EnumSet.allOf(KeyboardType.class).stream()
-                    .collect(Collectors.toMap(kt -> kt, kt -> kt.getReplyKeyboard(rb),
-                            (kt1, kt2) -> kt2, () -> new EnumMap<>(KeyboardType.class)));
+                            .collect(Collectors.toMap(kt -> kt, kt -> kt.getReplyKeyboard(rb),
+                                    (kt1, kt2) -> kt2, () -> new EnumMap<>(KeyboardType.class)));
             keyboardsByLang.put(rb.getLocale().getISO3Language(), keyboards);
         }
     }

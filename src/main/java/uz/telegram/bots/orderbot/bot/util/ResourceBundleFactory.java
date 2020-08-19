@@ -19,6 +19,7 @@ public class ResourceBundleFactory {
     public ResourceBundleFactory(BotProperties botProperties) {
         this.botProperties = botProperties;
         initBundles();
+        System.out.println("");
     }
 
     public void initBundles() {
@@ -28,7 +29,7 @@ public class ResourceBundleFactory {
                 throw new IllegalStateException("Locale for language tag: " + langTag + " not found");
             messagesResourceBundles.put(locale.getISO3Language(), ResourceBundle.getBundle("messages", locale));
         }
-        messagesResourceBundles.put("", ResourceBundle.getBundle("messages"));
+        messagesResourceBundles.put("", ResourceBundle.getBundle("messages", Locale.ROOT));
 
     }
 
@@ -42,7 +43,7 @@ public class ResourceBundleFactory {
         return messagesResourceBundles.get(langISO);
     }
 
-    public ResourceBundle getMessagesBundle(Locale locale) {
+    public ResourceBundle   getMessagesBundle(Locale locale) {
         String langISO = locale.getISO3Language();
         return getMessagesBundle(langISO);
     }
