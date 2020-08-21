@@ -1,14 +1,14 @@
 bot:
-  bot-token:
-  username:
+  bot-token: ${BOT_TOKEN}
+  username: "blueBankz_bot"
   usedLanguages:
     - uz-UZ
     - ru-RU
 jowi:
-  api-key:
-  api-secret:
-  api-url-v010:
-  api-url-v3:
+  api-key: ${JOWI_API_KEY}
+  api-secret: ${JOWI_API_SECRET}
+  api-url-v010: "https://api.jowi.club/v010"
+  api-url-v3: "https://api.jowi.club/v3"
 ---
 spring:
   profiles: dev
