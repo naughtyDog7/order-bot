@@ -9,10 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "orderu")
 @Data
 @RequiredArgsConstructor
 @NoArgsConstructor(force = true)
-public class OrderU {
+public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
@@ -21,13 +22,10 @@ public class OrderU {
     @JoinColumn(name = "telegram_user_id")
     private final TelegramUser telegramUser;
 
-    @OneToMany(mappedBy = "orderU", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private final List<Product> products = new ArrayList<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private final List<ProductWithCount> products = new ArrayList<>();
 
     private double finalPrice;
-
-    @OneToOne
-    private Location location;
 
     @OneToOne
     private PaymentInfo paymentInfo;
@@ -40,7 +38,6 @@ public class OrderU {
                 "id=" + id +
                 ", products=" + products +
                 ", finalPrice=" + finalPrice +
-                ", location=" + location +
                 ", paymentInfo=" + paymentInfo +
                 '}';
     }

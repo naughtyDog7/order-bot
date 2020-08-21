@@ -32,8 +32,8 @@ public class TelegramUser {
 
 
 
-    @OneToMany(mappedBy = "telegramUser", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private final List<OrderU> orders = new ArrayList<>();
+    @OneToMany(mappedBy = "telegramUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private final List<Order> orders = new ArrayList<>();
 
 
     private Role role = Role.USER;

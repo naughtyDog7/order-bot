@@ -3,10 +3,7 @@ package uz.telegram.bots.orderbot.bot.user;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 @Data
@@ -15,4 +12,10 @@ public class PaymentInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
+
+    @OneToOne
+    private Location orderLocation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Restaurant fromRestaurant;
 }

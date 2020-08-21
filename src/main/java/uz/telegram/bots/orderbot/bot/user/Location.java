@@ -19,6 +19,10 @@ public class Location {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    private final double latitude, longitude;
+    private final double longitude, latitude;
+
+    public static Location of(double longitude, double latitude) {
+        return new Location(longitude, latitude);
+    }
 
 }

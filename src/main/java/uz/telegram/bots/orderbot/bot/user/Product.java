@@ -18,10 +18,8 @@ public class Product {
     @Column(unique = true, nullable = false)
     private final String productId;
 
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private OrderU orderU;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Category category;
+
+    private volatile int countLeft;
 }

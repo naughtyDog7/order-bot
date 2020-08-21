@@ -19,11 +19,24 @@ public class Category {
 
     private final String name;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private final List<Product> products = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    private final List<Restaurant> restaurants = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Restaurant restaurant;
+
+    public void addProduct(Product product) {
+        products.add(product);
+        product.setCategory(this);
+    }
+
+    public Restaurant getRestaurant() {
+        return restaurant;
+    }
+
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
+    }
 
     public int getId() {
         return id;
@@ -35,10 +48,6 @@ public class Category {
 
     public List<Product> getProducts() {
         return products;
-    }
-
-    public List<Restaurant> getRestaurants() {
-        return restaurants;
     }
 
     @Override
@@ -55,7 +64,7 @@ public class Category {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", products=" + products +
-                ", restaurants=" + restaurants.stream().map(Restaurant::getRestaurantTitle).collect(Collectors.joining()) +
+                ", restaurant=" + restaurant.getRestaurantTitle() +
                 '}';
     }
 
