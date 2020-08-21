@@ -46,9 +46,10 @@ class FirstLanguageConfigurationMessageState implements MessageState {
             telegramUser.setLangISO("uzb");
         else if (lang.contains(defaultMessageBundle.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
-        else
+        else {
             defaultChosen = true; //If user enters invalid lang name default is chosen, and answer message is changed to "default lang chosen"
-
+            telegramUser.setLangISO("rus");
+        }
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
 
         String successText = !defaultChosen ? rb.getString("language-chosen")
