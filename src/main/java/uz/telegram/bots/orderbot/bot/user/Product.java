@@ -15,6 +15,7 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
+    @Column(unique = true, nullable = false)
     private final String productId;
 
     @ManyToOne

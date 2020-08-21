@@ -17,6 +17,7 @@ public class Restaurant {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
+    @Column(unique = true, nullable = false)
     private final String restaurantId;
     private final String restaurantTitle;
     private final double longitude;

@@ -18,6 +18,7 @@ public class TelegramUser {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
+    @Column(unique = true, nullable = false)
     private final int userId;
     private final long chatId;
 
