@@ -25,6 +25,8 @@ public class RestaurantDto {
     public static Restaurant toRestaurant(RestaurantDto restaurantDto) {
         Location location = Location.of(restaurantDto.longitude, restaurantDto.latitude);
         Restaurant restaurant = new Restaurant(restaurantDto.id, restaurantDto.title, location);
+        restaurant.setOnlineOrder(restaurantDto.onlineOrder);
+        restaurant.setDeliveryPrice(restaurantDto.deliveryPrice);
         return restaurant;
     }
 }
