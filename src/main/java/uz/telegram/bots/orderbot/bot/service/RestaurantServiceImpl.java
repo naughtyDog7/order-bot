@@ -79,4 +79,9 @@ public class RestaurantServiceImpl implements RestaurantService {
     public Optional<Restaurant> findByRestaurantId(String restaurantId) {
         return restaurantRepository.findByRestaurantId(restaurantId);
     }
+
+    @Override
+    public Restaurant getByOrderId(long orderId) {
+        return restaurantRepository.getFromRestaurantByOrderId(orderId);
+    }
 }

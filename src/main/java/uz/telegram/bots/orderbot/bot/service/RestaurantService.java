@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface RestaurantService {
     List<Restaurant> updateAndFetchRestaurants();
     Optional<Restaurant> findByRestaurantId(String restaurantId);
+    Restaurant getByOrderId(long orderId);
 }

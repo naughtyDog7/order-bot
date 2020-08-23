@@ -13,6 +13,8 @@ import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 import java.util.List;
 import java.util.Optional;
 
+import static uz.telegram.bots.orderbot.bot.user.Order.OrderState.CANCELLED;
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -43,16 +45,16 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void cancelOrder(Order order) {
-        productService.updateProducts();
-        synchronized (this) {
-            List<ProductWithCount> productsWithCount = order.getProducts();
-            for (ProductWithCount productWithCount : productsWithCount) {
-                Product product = productWithCount.getProduct();
-                product.setCountLeft(product.getCountLeft() + productWithCount.getCount());
-                productWithCount.setCount(0);
-                productRepository.save(product);
-                productWithCountRepository.save(productWithCount);
-            }
+        List<ProductWithCount> productsWithCount = productWithCountRepository.getAllByOrder(order);
+        for (ProductWithCount productWithCount : productsWithCount) {
+            Product product = productWithCount.getProduct();
+            product.setCountLeft(product.getCountLeft() + productWithCount.getCount());
+            productWithCount.setCount(0);
+            productRepository.save(product);
+            productWithCountRepository.save(productWithCount);
         }
+
+        order.setState(CANCELLED);
+        orderRepository.save(order);
     }
 }
