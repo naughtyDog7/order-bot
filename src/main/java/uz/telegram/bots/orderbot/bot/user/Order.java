@@ -27,6 +27,9 @@ public class Order {
 
     private double finalPrice;
 
+    private String chosenCategoryName = "";
+    private String chosenProductStringId = "";
+
     @OneToOne
     private PaymentInfo paymentInfo;
 
