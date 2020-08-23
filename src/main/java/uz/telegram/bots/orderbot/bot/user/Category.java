@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
+    @Column(nullable = false)
     private final String name;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -24,11 +26,6 @@ public class Category {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Restaurant restaurant;
-
-    public void addProduct(Product product) {
-        products.add(product);
-        product.setCategory(this);
-    }
 
     public Restaurant getRestaurant() {
         return restaurant;
@@ -50,6 +47,10 @@ public class Category {
         return products;
     }
 
+    public void addAllProducts(Collection<? extends Product> products) {
+        this.products.addAll(products);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -63,7 +64,7 @@ public class Category {
         return "Category{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", products=" + products +
+                ", products=" + Product.productNames(products) +
                 ", restaurant=" + restaurant.getRestaurantTitle() +
                 '}';
     }
