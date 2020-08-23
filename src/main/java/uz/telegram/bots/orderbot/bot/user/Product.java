@@ -18,7 +18,12 @@ public class Product {
     @Column(unique = true, nullable = false)
     private final String productId;
 
+    private final String name;
+
+    private double price;
+
     @ManyToOne(fetch = FetchType.LAZY)
+    @ToString.Exclude
     private Category category;
 
     private volatile int countLeft;
