@@ -8,6 +8,8 @@ import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 @Entity
 @Data
@@ -31,7 +33,6 @@ public class TelegramUser {
     private UserState curState = UserState.PRE_GREETING; //default to first User state
 
 
-
     @OneToMany(mappedBy = "telegramUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private final List<Order> orders = new ArrayList<>();
 
@@ -51,6 +52,27 @@ public class TelegramUser {
         return Objects.hash(userId);
     }
 
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", TelegramUser.class.getSimpleName() + "[", "]")
+                .add("id=" + id)
+                .add("userId=" + userId)
+                .add("chatId=" + chatId)
+                .add("username='" + username + "'")
+                .add("firstName='" + firstName + "'")
+                .add("lastName='" + lastName + "'")
+                .add("phoneNum='" + phoneNum + "'")
+                .add("langISO='" + langISO + "'")
+                .add("receiveComments=" + receiveComments)
+                .add("curState=" + curState)
+                .add("orders=" + orders
+                        .stream()
+                        .map(o -> o.getId() + "")
+                        .collect(Collectors.joining(",", "[", "]")))
+                .add("role=" + role)
+                .toString();
+    }
+
     public enum UserState {
         PRE_GREETING,
         FIRST_LANGUAGE_CONFIGURE,
@@ -58,13 +80,15 @@ public class TelegramUser {
         SETTINGS,
         LANGUAGE_CONFIGURE,
         ORDER_MAIN,
-        CONTACT_US
+        CONTACT_US,
+        CATEGORY_MAIN,
+        PRODUCT_NUM_CHOOSE,
+        BASKET_MAIN,
     }
 
     public enum Role {
         USER
     }
-
 
 
 }

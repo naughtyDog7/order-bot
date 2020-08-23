@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 @Entity
 @Data
@@ -28,5 +30,28 @@ public class ProductWithCount {
         productWithCount.setProduct(product);
         productWithCount.setCount(count);
         return productWithCount;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProductWithCount that = (ProductWithCount) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", ProductWithCount.class.getSimpleName() + "[", "]")
+                .add("id=" + id)
+                .add("count=" + count)
+                .add("product=" + product.getName())
+                .add("orderId=" + (order == null ? -1 : order.getId()))
+                .toString();
     }
 }

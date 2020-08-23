@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 @Data
 @Entity
@@ -29,4 +31,31 @@ public class Restaurant {
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private final List<Category> categories = new ArrayList<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Restaurant that = (Restaurant) o;
+        return id == that.id &&
+                Objects.equals(restaurantId, that.restaurantId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, restaurantId);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", Restaurant.class.getSimpleName() + "[", "]")
+                .add("id=" + id)
+                .add("restaurantId='" + restaurantId + "'")
+                .add("restaurantTitle='" + restaurantTitle + "'")
+                .add("location=" + location)
+                .add("onlineOrder=" + onlineOrder)
+                .add("deliveryPrice=" + deliveryPrice)
+                .add("categories=" + Category.getNames(categories))
+                .toString();
+    }
 }
