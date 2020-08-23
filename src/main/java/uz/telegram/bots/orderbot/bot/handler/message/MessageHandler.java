@@ -36,7 +36,7 @@ public class MessageHandler implements Handler {
     @Override
     public void handle(Update update) {
         TelegramUser telegramUser = service.getOrSaveUser(update);
-        Lock lock = rlf.getLock(telegramUser.getChatId());
+        Lock lock = rlf.getLockForChatId(telegramUser.getChatId());
         try {
             TelegramUser updatedUser;
             if (lock.tryLock()) {
