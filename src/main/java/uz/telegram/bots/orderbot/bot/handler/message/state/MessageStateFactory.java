@@ -44,6 +44,15 @@ public class MessageStateFactory {
             case ORDER_MAIN:
                 ms = messageStatesMap.get(OrderMainMessageState.class);
                 break;
+            case CATEGORY_MAIN:
+                ms = messageStatesMap.get(CategoryMainMessageState.class);
+                break;
+            case PRODUCT_NUM_CHOOSE:
+                ms = messageStatesMap.get(ProductNumChooseState.class);
+                break;
+            case BASKET_MAIN:
+                ms = messageStatesMap.get(BasketMainMessageState.class);
+                break;
             default:
                 ms = null;
         }

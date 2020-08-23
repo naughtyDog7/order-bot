@@ -1,72 +1,165 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import uz.telegram.bots.orderbot.bot.service.CategoryService;
-import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
-import uz.telegram.bots.orderbot.bot.user.Category;
-import uz.telegram.bots.orderbot.bot.user.TelegramUser;
-import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
-import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import uz.telegram.bots.orderbot.bot.service.*;
+import uz.telegram.bots.orderbot.bot.user.*;
+import uz.telegram.bots.orderbot.bot.util.*;
 
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.locks.Lock;
 
 @Component
+@Slf4j
 class OrderMainMessageState implements MessageState {
 
     private final ResourceBundleFactory rbf;
-    private final TelegramUserService service;
+    private final TelegramUserService userService;
     private final KeyboardFactory kf;
+    private final KeyboardUtil ku;
     private final CategoryService categoryService;
+    private final OrderService orderService;
+    private final RestaurantService restaurantService;
+    private final ProductService productService;
+    private final ProductWithCountService productWithCountService;
+    private final LockFactory lf;
+    private final TextUtil tu;
 
     @Autowired
-    OrderMainMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf, CategoryService categoryService) {
+    OrderMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
+                          KeyboardFactory kf, KeyboardUtil ku, CategoryService categoryService,
+                          OrderService orderService, RestaurantService restaurantService,
+                          ProductService productService, ProductWithCountService productWithCountService,
+                          LockFactory lf, TextUtil tu) {
         this.rbf = rbf;
-        this.service = service;
+        this.userService = userService;
         this.kf = kf;
+        this.ku = ku;
         this.categoryService = categoryService;
+        this.orderService = orderService;
+        this.restaurantService = restaurantService;
+        this.productService = productService;
+        this.productWithCountService = productWithCountService;
+        this.lf = lf;
+        this.tu = tu;
     }
 
     @Override
+    //can come as Order btn, basket, category, cancel order
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         if (!message.hasText()) {
             return;
         }
+
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         String text = message.getText();
 
-        if (text.equals(rb.getString("btn-order-main"))) {
-            handleOrder(bot, telegramUser, rb);
-            return;
-        } else if (text.equals(rb.getString("btn-cancel-order"))) {
-            handleCancel(bot, telegramUser, rb);
-            return;
+        String btnBasketText = rb.getString("btn-basket");
+
+        Order order = orderService.getActive(telegramUser)
+                .orElseThrow(() -> new AssertionError("Order must be present at this point"));
+
+        Lock lock = lf.getResourceLock();
+        try {
+            lock.lock();
+
+            if (text.matches(btnBasketText + "\\(\\d+\\)")) {
+                handleBasket(bot, telegramUser, rb, order);
+            } else if (text.equals(rb.getString("btn-order-main"))) {
+                handleOrder(bot, telegramUser, rb);
+                return;
+            } else if (text.equals(rb.getString("btn-cancel-order"))) {
+                handleCancel(bot, telegramUser, rb, order);
+                return;
+            }
+
+            Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+
+            List<Category> categories = categoryService.updateAndFetchCategories(restaurant.getRestaurantId());
+            int index = Category.getNames(categories).indexOf(text);
+            if (index != -1)
+                handleCategory(bot, telegramUser, rb,
+                        categories.get(index), order);
+        } finally {
+            lock.unlock();
         }
-
-        List<Category> categories = categoryService.fetchCategories("test-restaurant-id");
-        int index = Category.getNames(categories).indexOf(text);
-        if (index != -1)
-            handleCategory(bot, telegramUser, rb,
-                    categories.get(index));
-
     }
 
-    private void handleCategory(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Category category) {
-
+    private void handleCancel(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        orderService.cancelOrder(order);
+        ToMainMenuHandler.builder()
+                .bot(bot)
+                .kf(kf)
+                .rb(rb)
+                .service(userService)
+                .telegramUser(telegramUser)
+                .build()
+                .handleToMainMenu();
     }
 
-    private void handleCancel(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+    private void handleCategory(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                ResourceBundle rb, Category category, Order order) {
 
+        List<Product> products = productService.getAllByCategoryId(category.getId());
+
+        ToCategoryMainHandler.builder()
+                .bot(bot)
+                .userService(userService)
+                .telegramUser(telegramUser)
+                .rb(rb)
+                .kf(kf)
+                .ku(ku)
+                .products(products)
+                .build()
+                .handleToProducts();
+
+        order.setChosenCategoryName(category.getName());
+        orderService.save(order);
     }
+
 
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
 
     }
 
+    private void handleBasket(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
+        if (products.isEmpty()) {
+            handleEmptyBasket(bot, telegramUser, rb);
+            return;
+        }
+        String text = tu.appendProducts(products, rb);
+        SendMessage sendMessage = new SendMessage()
+                .setText(text)
+                .setChatId(telegramUser.getChatId());
 
+        ku.setBasketKeyboard(productService, sendMessage, products, rb, telegramUser.getLangISO());
+
+        try {
+            bot.execute(sendMessage);
+            telegramUser.setCurState(TelegramUser.UserState.BASKET_MAIN);
+            userService.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleEmptyBasket(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(user.getChatId())
+                .setText(rb.getString("basket-empty-message"));
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

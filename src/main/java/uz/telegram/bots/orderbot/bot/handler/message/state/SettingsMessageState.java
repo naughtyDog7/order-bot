@@ -70,13 +70,13 @@ class SettingsMessageState implements MessageState {
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        MenuBackHandler.builder()
+        ToMainMenuHandler.builder()
                 .bot(bot)
                 .rb(rb)
                 .telegramUser(telegramUser)
                 .service(service)
                 .kf(kf)
                 .build()
-                .handleBackToMenu();
+                .handleToMainMenu();
     }
 }
