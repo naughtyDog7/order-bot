@@ -46,6 +46,8 @@ class LanguageConfigurationMessageState implements MessageState {
             telegramUser.setLangISO("uzb");
         else if (lang.contains(rb.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
+        else
+            return;
 
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())

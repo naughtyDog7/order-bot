@@ -107,13 +107,12 @@ class MainMenuMessageState implements MessageState {
             lock.lock();
 
             List<Restaurant> restaurants = restaurantService.updateAndFetchRestaurants();
-            Restaurant restaurant = restaurants.get(0); //TODO change to finding closest restaurant impl
+            Restaurant restaurant = restaurants.get(1); //TODO change to finding closest restaurant impl
             Order order = new Order(telegramUser);
             PaymentInfo paymentInfo = new PaymentInfo();
             paymentInfo.setFromRestaurant(restaurant);
-            Location location = locationService.save(Location.of(42.2, 68.8));
+            Location location = Location.of(42.2, 68.8);
             paymentInfo.setOrderLocation(location);
-            paymentInfo = paymentInfoService.save(paymentInfo);
             order.setPaymentInfo(paymentInfo);
             //test info
 

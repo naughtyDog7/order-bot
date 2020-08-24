@@ -12,10 +12,7 @@ import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.user.Order;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
-import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
-import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
-import uz.telegram.bots.orderbot.bot.util.LockFactory;
-import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
+import uz.telegram.bots.orderbot.bot.util.*;
 
 import java.util.List;
 import java.util.ResourceBundle;
@@ -34,13 +31,14 @@ class BasketMainMessageState implements MessageState {
     private final KeyboardUtil ku;
     private final KeyboardFactory kf;
     private final LockFactory lf;
+    private final TextUtil tu;
 
     @Autowired
     BasketMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                            OrderService orderService, ProductService productService,
                            ProductWithCountService productWithCountService,
                            RestaurantService restaurantService, CategoryService categoryService,
-                           KeyboardUtil ku, KeyboardFactory kf, LockFactory lf) {
+                           KeyboardUtil ku, KeyboardFactory kf, LockFactory lf, TextUtil tu) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
@@ -51,6 +49,7 @@ class BasketMainMessageState implements MessageState {
         this.ku = ku;
         this.kf = kf;
         this.lf = lf;
+        this.tu = tu;
     }
 
     @Override
@@ -89,19 +88,25 @@ class BasketMainMessageState implements MessageState {
         if (basketNumItems == 1) {
             handleNoItemsLeft(bot, telegramUser, rb, order);
         } else {
-            handleAfterItemDeleted(bot, telegramUser, rb, order);
+            handleAfterItemDeleted(bot, telegramUser, rb, order, productName);
         }
     }
 
-    private void handleAfterItemDeleted(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        SendMessage sendMessage = new SendMessage()
-                .setText(rb.getString("deleted"))
+    private void handleAfterItemDeleted(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, String productName) {
+        SendMessage sendMessage1 = new SendMessage()
+                .setText(rb.getString("deleted") + "❌ " + productName)
                 .setChatId(telegramUser.getChatId());
         List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
-        ku.setBasketKeyboard(productService, sendMessage, products, rb, telegramUser.getLangISO());
 
+        String text = tu.appendProducts(products, rb);
+        SendMessage sendMessage2 = new SendMessage()
+                .setText(text)
+                .setChatId(telegramUser.getChatId());
+
+        ku.setBasketKeyboard(productService, sendMessage2, products, rb, telegramUser.getLangISO());
         try {
-            bot.execute(sendMessage);
+            bot.execute(sendMessage1);
+            bot.execute(sendMessage2);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
