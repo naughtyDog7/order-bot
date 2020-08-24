@@ -12,9 +12,12 @@ import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
+import java.util.regex.Pattern;
 
 @Component
 @Slf4j
@@ -62,17 +65,17 @@ class OrderMainMessageState implements MessageState {
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         String text = message.getText();
 
-        String btnBasketText = rb.getString("btn-basket");
-
         Order order = orderService.getActive(telegramUser)
                 .orElseThrow(() -> new AssertionError("Order must be present at this point"));
 
         Lock lock = lf.getResourceLock();
+
         try {
             lock.lock();
-
-            if (text.matches(btnBasketText + "\\(\\d+\\)")) {
+            Pattern basketPattern = getPattern(rb, telegramUser.getLangISO());
+            if (basketPattern.matcher(text).matches()) {
                 handleBasket(bot, telegramUser, rb, order);
+                return;
             } else if (text.equals(rb.getString("btn-order-main"))) {
                 handleOrder(bot, telegramUser, rb);
                 return;
@@ -91,6 +94,16 @@ class OrderMainMessageState implements MessageState {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * this map created to cache basket patterns for lang iso
+     * and dont waste time to create pattern each time String.mathces() called
+     */
+    private static final Map<String, Pattern> BASKET_PATTERNS = new HashMap<>();
+
+    private static Pattern getPattern(ResourceBundle rb, String langISO) {
+        return BASKET_PATTERNS.computeIfAbsent(langISO, (key) -> Pattern.compile(rb.getString("btn-basket") + "\\(\\d+\\)"));
     }
 
     private void handleCancel(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
@@ -127,7 +140,7 @@ class OrderMainMessageState implements MessageState {
 
 
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-
+        
     }
 
     private void handleBasket(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
