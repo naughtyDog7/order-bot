@@ -13,6 +13,7 @@ public class UriUtil {
     private final JowiProperties jowiProperties;
     private final UriComponents restaurantsTemplate;
     private final UriComponents menuTemplate;
+    private final URI orderPostUri;
 
     @Autowired
     public UriUtil(JowiProperties jowiProperties) {
@@ -25,6 +26,9 @@ public class UriUtil {
         menuTemplate = UriComponentsBuilder.fromUri(restaurantsTemplate.toUri())
                 .path("/{restaurant-id}")
                 .build();
+        orderPostUri = UriComponentsBuilder.fromUriString(jowiProperties.getApiUrlV3())
+                .path("/orders")
+                .build().toUri();
     }
 
     public URI getRestaurantsGetUri() {
@@ -33,5 +37,9 @@ public class UriUtil {
 
     public URI getMenuGetUri(String restaurantId) {
         return menuTemplate.expand(restaurantId).toUri();
+    }
+
+    public URI getOrderPostUri() {
+        return orderPostUri;
     }
 }

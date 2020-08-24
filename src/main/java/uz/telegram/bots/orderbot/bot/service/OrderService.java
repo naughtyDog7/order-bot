@@ -9,4 +9,5 @@ public interface OrderService {
     Optional<Order> getActive(TelegramUser user);
     <S extends Order> S save(S s);
     void cancelOrder(Order order);
+    void postOrder(Order order, TelegramUser user);
 }
