@@ -56,7 +56,7 @@ class BasketMainMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String btnBack = rb.getString("btn-back");
@@ -77,7 +77,7 @@ class BasketMainMessageState implements MessageState {
             Optional<ProductWithCount> optProduct = productWithCountService.getByOrderIdAndProductName(order.getId(), text);
             String finalProductName = text;
             optProduct.ifPresentOrElse(product -> handleItemDelete(bot, telegramUser, rb, order, product, finalProductName, basketNumItems),
-                    () -> DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb));
+                    () -> DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
         } finally {
             lock.unlock();
         }

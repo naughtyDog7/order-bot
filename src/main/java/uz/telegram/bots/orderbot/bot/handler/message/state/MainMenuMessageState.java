@@ -58,7 +58,7 @@ class MainMenuMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -75,7 +75,7 @@ class MainMenuMessageState implements MessageState {
         else if (messageText.equals(contactUs))
             handleContactUs(bot, telegramUser, rb);
         else
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
     }
 
     private void handleSettings(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

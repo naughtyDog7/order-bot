@@ -60,7 +60,7 @@ class OrderMainMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -90,7 +90,7 @@ class OrderMainMessageState implements MessageState {
                 handleCategory(bot, telegramUser, rb,
                         categories.get(index), order);
             else
-                DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+                DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
         } finally {
             lock.unlock();
         }

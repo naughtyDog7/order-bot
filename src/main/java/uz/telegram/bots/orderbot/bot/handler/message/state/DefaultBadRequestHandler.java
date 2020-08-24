@@ -8,7 +8,7 @@ import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 import java.util.ResourceBundle;
 
 public class DefaultBadRequestHandler {
-    public static void handleBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
+    public static void handleTextBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("bad-request-message"));

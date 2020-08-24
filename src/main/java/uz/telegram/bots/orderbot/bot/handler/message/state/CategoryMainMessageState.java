@@ -59,7 +59,7 @@ class CategoryMainMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -86,7 +86,7 @@ class CategoryMainMessageState implements MessageState {
                 Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
 
                 optProduct.ifPresentOrElse(product -> handleProduct(bot, telegramUser, rb, product, order),
-                        () -> DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb));
+                        () -> DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
             }
         } finally {
             lock.unlock();

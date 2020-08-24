@@ -35,7 +35,7 @@ class FirstLanguageConfigurationMessageState implements MessageState {
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rbf.getDefaultMessageBundle());
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rbf.getDefaultMessageBundle());
             return;
         }
 

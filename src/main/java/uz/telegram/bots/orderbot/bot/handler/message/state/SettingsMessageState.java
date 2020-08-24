@@ -36,7 +36,7 @@ class SettingsMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -50,7 +50,7 @@ class SettingsMessageState implements MessageState {
         } else if (messageText.equals(back)) {
             handleBack(bot, telegramUser, rb);
         } else {
-            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
         }
     }
 
