@@ -54,7 +54,12 @@ public class TextUtil {
                     .append(" ")
                     .append(rb.getString("uzs-text"));
         }
-        result.append("\n\nTOTAL ==> ").append(DECIMAL_FORMAT.format(totalSum)).append(" ").append(rb.getString("uzs-text"));
+        result.append("\n\n")
+                .append(rb.getString("total"))
+                .append(": ==> ")
+                .append(DECIMAL_FORMAT.format(totalSum))
+                .append(" ")
+                .append(rb.getString("uzs-text"));
         return result.toString();
     }
 

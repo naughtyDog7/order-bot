@@ -12,8 +12,8 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
 
 
     @Query(value = "SELECT r FROM Order o " +
-            "INNER JOIN o.paymentInfo pi " +
-            "INNER JOIN pi.fromRestaurant r " +
+            "JOIN o.paymentInfo pi " +
+            "JOIN pi.fromRestaurant r " +
             "WHERE o.id = :orderId AND o.paymentInfo.fromRestaurant.restaurantId = r.restaurantId")
-    Restaurant getFromRestaurantByOrderId(long orderId);
+    Restaurant getByOrderId(long orderId);
 }

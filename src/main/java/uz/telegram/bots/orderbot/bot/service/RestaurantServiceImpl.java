@@ -82,6 +82,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     public Restaurant getByOrderId(long orderId) {
-        return restaurantRepository.getFromRestaurantByOrderId(orderId);
+        return restaurantRepository.getByOrderId(orderId);
     }
 }
