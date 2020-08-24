@@ -47,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
     public void cancelOrder(Order order) {
         List<ProductWithCount> productsWithCount = productWithCountRepository.getAllByOrder(order);
         for (ProductWithCount productWithCount : productsWithCount) {
-            Product product = productWithCount.getProduct();
+            Product product = productService.fromProductWithCount(productWithCount.getId());
             product.setCountLeft(product.getCountLeft() + productWithCount.getCount());
             productWithCount.setCount(0);
             productRepository.save(product);
