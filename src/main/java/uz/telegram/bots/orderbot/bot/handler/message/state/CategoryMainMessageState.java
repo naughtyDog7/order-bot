@@ -57,9 +57,11 @@ class CategoryMainMessageState implements MessageState {
     //can come as product or back button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
-            return;
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            return;
+        }
 
         String backButtonText = rb.getString("btn-back");
         String text = message.getText();
@@ -83,10 +85,8 @@ class CategoryMainMessageState implements MessageState {
 
                 Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
 
-                if (optProduct.isPresent()) {
-                    Product product = optProduct.get();
-                    handleProduct(bot, telegramUser, rb, product, order);
-                }
+                optProduct.ifPresentOrElse(product -> handleProduct(bot, telegramUser, rb, product, order),
+                        () -> DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb));
             }
         } finally {
             lock.unlock();

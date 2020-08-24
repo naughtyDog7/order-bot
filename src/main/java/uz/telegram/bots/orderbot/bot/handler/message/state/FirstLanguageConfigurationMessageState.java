@@ -34,8 +34,10 @@ class FirstLanguageConfigurationMessageState implements MessageState {
     //setting user language, saving to db, and sending success message and main menu message
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rbf.getDefaultMessageBundle());
             return;
+        }
 
         ResourceBundle defaultMessageBundle = rbf.getDefaultMessageBundle();
         String lang = message.getText();

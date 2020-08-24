@@ -34,9 +34,11 @@ class ContactUsMessageState implements MessageState {
     @Override
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
-            return;
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            return;
+        }
         String text = message.getText();
 
         if (text.equals(rb.getString("btn-back")))

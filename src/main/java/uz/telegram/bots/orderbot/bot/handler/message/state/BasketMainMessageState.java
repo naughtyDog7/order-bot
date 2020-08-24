@@ -8,13 +8,11 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.*;
-import uz.telegram.bots.orderbot.bot.user.Category;
-import uz.telegram.bots.orderbot.bot.user.Order;
-import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
-import uz.telegram.bots.orderbot.bot.user.TelegramUser;
+import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
 
@@ -56,11 +54,13 @@ class BasketMainMessageState implements MessageState {
     //can come as some product to remove from order, or back button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
-            return;
-        String text = message.getText();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            return;
+        }
         String btnBack = rb.getString("btn-back");
+        String text = message.getText();
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
@@ -73,16 +73,18 @@ class BasketMainMessageState implements MessageState {
             }
             String removeProductCharText = rb.getString("remove-product-char");
             text = text.replace(removeProductCharText, "").strip(); //remove ❌ to get clean product name
-            handleItemDelete(bot, telegramUser, rb, order, text, basketNumItems);
+
+            Optional<ProductWithCount> optProduct = productWithCountService.getByOrderIdAndProductName(order.getId(), text);
+            String finalProductName = text;
+            optProduct.ifPresentOrElse(product -> handleItemDelete(bot, telegramUser, rb, order, product, finalProductName, basketNumItems),
+                    () -> DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb));
         } finally {
             lock.unlock();
         }
     }
 
     private void handleItemDelete(TelegramLongPollingBot bot, TelegramUser telegramUser,
-                                  ResourceBundle rb, Order order, String productName, int basketNumItems) {
-        ProductWithCount productWithCount = productWithCountService.getByOrderIdAndProductName(order.getId(), productName)
-                .orElseThrow(() -> new IllegalStateException("Product must be present at this point (choosing what to remove from basket)"));
+                                  ResourceBundle rb, Order order, ProductWithCount productWithCount, String productName, int basketNumItems) {
         productWithCountService.deleteById(productWithCount.getId());
         //if no products left, go back to order main
         if (basketNumItems == 1) {

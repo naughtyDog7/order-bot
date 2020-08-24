@@ -33,10 +33,12 @@ class SettingsMessageState implements MessageState {
 
     @Override
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
-        ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         Message message = update.getMessage();
-        if (!message.hasText())
+        ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
             return;
+        }
 
         String changeLanguage = rb.getString("btn-settings-language-choose");
         String back = rb.getString("btn-back");
@@ -47,6 +49,8 @@ class SettingsMessageState implements MessageState {
             handleChangeLanguage(bot, telegramUser, rb);
         } else if (messageText.equals(back)) {
             handleBack(bot, telegramUser, rb);
+        } else {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
         }
     }
 

@@ -32,8 +32,6 @@ class MainMenuMessageState implements MessageState {
     private final ResourceBundleFactory rbf;
     private final TelegramUserService userService;
     private final RestaurantService restaurantService;
-    private final PaymentInfoService paymentInfoService;
-    private final LocationService locationService;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final CategoryService categoryService;
@@ -42,14 +40,11 @@ class MainMenuMessageState implements MessageState {
 
     @Autowired
     MainMenuMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
-                         RestaurantService restaurantService, PaymentInfoService paymentInfoService,
-                         LocationService locationService, KeyboardFactory kf, KeyboardUtil ku,
+                         RestaurantService restaurantService, KeyboardFactory kf, KeyboardUtil ku,
                          CategoryService categoryService, OrderService orderService, LockFactory lf) {
         this.rbf = rbf;
         this.userService = userService;
         this.restaurantService = restaurantService;
-        this.paymentInfoService = paymentInfoService;
-        this.locationService = locationService;
         this.kf = kf;
         this.ku = ku;
         this.categoryService = categoryService;
@@ -61,9 +56,11 @@ class MainMenuMessageState implements MessageState {
     //Message to this state can come as Order, Settings, Contact Us
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
-            return;
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            return;
+        }
 
         String settings = rb.getString("btn-main-menu-settings");
         String order = rb.getString("btn-main-menu-order");
@@ -77,6 +74,8 @@ class MainMenuMessageState implements MessageState {
             handleOrder(bot, telegramUser, rb);
         else if (messageText.equals(contactUs))
             handleContactUs(bot, telegramUser, rb);
+        else
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
     }
 
     private void handleSettings(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

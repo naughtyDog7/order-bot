@@ -54,9 +54,11 @@ class ProductNumChooseState implements MessageState {
     //can come as number or back button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
-            return;
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
+            return;
+        }
         String text = message.getText();
         String btnBackText = rb.getString("btn-back");
 

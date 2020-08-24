@@ -58,18 +58,16 @@ class OrderMainMessageState implements MessageState {
     //can come as Order btn, basket, category, cancel order
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
+        ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
+            DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
             return;
         }
 
-        ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         String text = message.getText();
-
         Order order = orderService.getActive(telegramUser)
                 .orElseThrow(() -> new AssertionError("Order must be present at this point"));
-
         Lock lock = lf.getResourceLock();
-
         try {
             lock.lock();
             Pattern basketPattern = getPattern(rb, telegramUser.getLangISO());
@@ -91,6 +89,8 @@ class OrderMainMessageState implements MessageState {
             if (index != -1)
                 handleCategory(bot, telegramUser, rb,
                         categories.get(index), order);
+            else
+                DefaultBadRequestHandler.handleBadRequest(bot, telegramUser, rb);
         } finally {
             lock.unlock();
         }
