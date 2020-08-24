@@ -23,7 +23,7 @@ public class Order {
     @JoinColumn(name = "telegram_user_id")
     private final TelegramUser telegramUser;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<ProductWithCount> products = new ArrayList<>();
 
     private double finalPrice;
@@ -31,7 +31,7 @@ public class Order {
     private String chosenCategoryName = "";
     private String chosenProductStringId = "";
 
-    @OneToOne
+    @OneToOne(cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
     private PaymentInfo paymentInfo;
 
     private OrderState state = OrderState.ACTIVE;

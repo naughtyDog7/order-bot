@@ -15,7 +15,7 @@ public class PaymentInfo {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @OneToOne
+    @OneToOne(cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
     private Location orderLocation;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,6 +33,8 @@ public class PaymentInfo {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+
 
     @Override
     public String toString() {

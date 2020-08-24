@@ -29,7 +29,7 @@ public class Restaurant {
     private boolean onlineOrder;
     private double deliveryPrice;
 
-    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<Category> categories = new ArrayList<>();
 
     @Override

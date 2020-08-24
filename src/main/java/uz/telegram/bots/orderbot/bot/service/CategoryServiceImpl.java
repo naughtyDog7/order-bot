@@ -16,9 +16,6 @@ import uz.telegram.bots.orderbot.bot.repository.OrderRepository;
 import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
 import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.Category;
-import uz.telegram.bots.orderbot.bot.user.Order;
-import uz.telegram.bots.orderbot.bot.user.Product;
-import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
 import java.util.HashMap;
@@ -29,7 +26,6 @@ import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static uz.telegram.bots.orderbot.bot.user.Order.OrderState.ACTIVE;
 
 @Service
 @Slf4j
@@ -38,6 +34,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final RestaurantRepository restaurantRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final ProductService productService;
     private final RestTemplate restTemplate;
     private final UriUtil uriUtil;
 
@@ -48,11 +45,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository, RestaurantRepository restaurantRepository,
-                               ProductRepository productRepository, OrderRepository orderRepository, RestTemplate restTemplate, UriUtil uriUtil) {
+                               ProductRepository productRepository, OrderRepository orderRepository,
+                               ProductService productService, RestTemplate restTemplate, UriUtil uriUtil) {
         this.categoryRepository = categoryRepository;
         this.restaurantRepository = restaurantRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
+        this.productService = productService;
         this.restTemplate = restTemplate;
         this.uriUtil = uriUtil;
     }
@@ -102,36 +101,14 @@ public class CategoryServiceImpl implements CategoryService {
                     .orElseThrow(() -> new IllegalStateException("Restaurant must be found at this point"))));
 
             List<Category> result = categoryRepository.saveAll(categories);
-            updateProductInformation(result);
+            productService.updateProductInformation(result);
             return result;
         } else {
             throw new IllegalStateException("Was waiting for status code 200 or 304, got response " + jsonResponse);
         }
     }
 
-    //this method updates count left in all products ((jowiApiCountLeft) - (allActiveOrdersProductCount))
-    private void updateProductInformation(List<? extends Category> categories) {
-        List<Order> activeOrders = orderRepository.findAllByStateWithProducts(ACTIVE);
-        List<Product> products = categories.stream().flatMap(c -> c.getProducts().stream())
-                .collect(Collectors.toList());
 
-        products.stream().filter(p -> p.getCountLeft() == -1)
-                .forEach(p -> p.setCountLeft(Integer.MAX_VALUE));
-
-        List<ProductWithCount> productWithCounts = activeOrders.stream()
-                .flatMap(o -> o.getProducts().stream())
-                .collect(Collectors.toList());
-
-        for (ProductWithCount pwc : productWithCounts) {
-            int index = products.indexOf(pwc.getProduct());
-            if (index >= 0){
-                Product product = products.get(index);
-                product.setCountLeft(product.getCountLeft() - pwc.getCount());
-            }
-        }
-
-        productRepository.saveAll(products);
-    }
 
     public Optional<Category> findByNameAndRestaurantId(String name, int restaurantId) {
         return categoryRepository.findByNameAndRestaurantId(name, restaurantId);

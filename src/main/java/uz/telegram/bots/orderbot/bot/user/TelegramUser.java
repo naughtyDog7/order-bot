@@ -33,7 +33,7 @@ public class TelegramUser {
     private UserState curState = UserState.PRE_GREETING; //default to first User state
 
 
-    @OneToMany(mappedBy = "telegramUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "telegramUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<Order> orders = new ArrayList<>();
 
 

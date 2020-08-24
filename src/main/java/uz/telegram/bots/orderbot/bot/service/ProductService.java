@@ -15,4 +15,5 @@ public interface ProductService {
 
     Product save(Product product);
     Product fromProductWithCount(long id);
+    void updateProductInformation(List<? extends Category> categories);
 }
