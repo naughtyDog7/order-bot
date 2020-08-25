@@ -26,7 +26,7 @@ public class ProductDto {
     public static Product toProduct(ProductDto productDto) {
         Product product = new Product(productDto.id, productDto.title);
         product.setCountLeft((int) Math.round(productDto.countLeft));
-        product.setPrice(productDto.price);
+        product.setPrice((int) Math.round(productDto.price));
         return product;
     }
 }

@@ -24,7 +24,7 @@ public class Product {
 
     private final String name;
 
-    private double price;
+    private int price;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @ToString.Exclude

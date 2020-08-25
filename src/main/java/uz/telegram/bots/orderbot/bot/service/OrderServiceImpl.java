@@ -87,7 +87,7 @@ public class OrderServiceImpl implements OrderService {
                 "+somenumber", DELIVERY, 0, ONLINE);
         orderWrapper.setOrder(orderDto);
         orderDto.setCourses(products.stream().map(CourseDto::fromProductWithCount).collect(Collectors.toList()));
-        orderDto.setAmountOrder(products.stream().map(ProductWithCount::getProduct).mapToDouble(Product::getPrice).sum());
+        orderDto.setAmountOrder(products.stream().map(ProductWithCount::getProduct).mapToInt(Product::getPrice).sum());
 
         RequestEntity<OrderWrapper> requestEntity = RequestEntity.post(uriUtil.getOrderPostUri())
                 .contentType(MediaType.APPLICATION_JSON)

@@ -6,7 +6,6 @@ import uz.telegram.bots.orderbot.bot.service.ProductService;
 import uz.telegram.bots.orderbot.bot.user.Product;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
 
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ThreadLocalRandom;
@@ -40,28 +39,26 @@ public class TextUtil {
         for (ProductWithCount productWithCount : products) {
             Product product = productService.fromProductWithCount(productWithCount.getId());
             String appendToCount = rb.getString("count-append");
-            double priceForProduct = product.getPrice() * productWithCount.getCount();
+            int priceForProduct = product.getPrice() * productWithCount.getCount();
             totalSum += priceForProduct;
             result.append("\n")
                     .append(product.getName())
                     .append(" ➡ ")
-                    .append(DECIMAL_FORMAT.format(product.getPrice()))
+                    .append(product.getPrice())
                     .append(" * ")
                     .append(productWithCount.getCount())
                     .append(appendToCount)
                     .append(" = ")
-                    .append(DECIMAL_FORMAT.format(priceForProduct))
+                    .append(priceForProduct)
                     .append(" ")
                     .append(rb.getString("uzs-text"));
         }
         result.append("\n\n")
                 .append(rb.getString("total"))
                 .append(": ==> ")
-                .append(DECIMAL_FORMAT.format(totalSum))
+                .append(totalSum)
                 .append(" ")
                 .append(rb.getString("uzs-text"));
         return result.toString();
     }
-
-    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#");
 }
