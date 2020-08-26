@@ -37,18 +37,22 @@ class LanguageConfigurationMessageState implements MessageState {
     @Override
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
-        if (!message.hasText())
-            return;
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+
+        if (!message.hasText()) {
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            return;
+        }
 
         String lang = message.getText();
         if (lang.contains(rb.getString("btn-uzb-lang")))
             telegramUser.setLangISO("uzb");
         else if (lang.contains(rb.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
-        else
+        else {
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
-
+        }
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("language-chosen"));
