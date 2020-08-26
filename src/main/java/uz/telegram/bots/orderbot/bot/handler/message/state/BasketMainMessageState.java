@@ -24,7 +24,6 @@ class BasketMainMessageState implements MessageState {
     private final OrderService orderService;
     private final ProductService productService;
     private final ProductWithCountService productWithCountService;
-    private final RestaurantService restaurantService;
     private final CategoryService categoryService;
     private final KeyboardUtil ku;
     private final KeyboardFactory kf;
@@ -35,14 +34,13 @@ class BasketMainMessageState implements MessageState {
     BasketMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                            OrderService orderService, ProductService productService,
                            ProductWithCountService productWithCountService,
-                           RestaurantService restaurantService, CategoryService categoryService,
+                           CategoryService categoryService,
                            KeyboardUtil ku, KeyboardFactory kf, LockFactory lf, TextUtil tu) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
         this.productService = productService;
         this.productWithCountService = productWithCountService;
-        this.restaurantService = restaurantService;
         this.categoryService = categoryService;
         this.ku = ku;
         this.kf = kf;

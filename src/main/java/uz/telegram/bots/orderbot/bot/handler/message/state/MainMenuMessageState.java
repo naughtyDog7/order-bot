@@ -17,6 +17,8 @@ import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
 import uz.telegram.bots.orderbot.bot.util.LockFactory;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -141,6 +143,9 @@ class MainMenuMessageState implements MessageState {
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
+        } catch (IOException e) {
+            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+            throw new UncheckedIOException(e);
         } finally {
             lock.unlock();
         }

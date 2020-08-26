@@ -12,12 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import uz.telegram.bots.orderbot.bot.dto.CategoryDto;
 import uz.telegram.bots.orderbot.bot.repository.CategoryRepository;
-import uz.telegram.bots.orderbot.bot.repository.OrderRepository;
-import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
 import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +75,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     //this method fetches categories from jowi api, if anything changed, saves to repo
-    public List<Category> updateAndFetchCategories(String restaurantId) {
+    public List<Category> updateAndFetchCategories(String restaurantId) throws IOException {
         RequestEntity<Void> requestEntity = RequestEntity.get(uriUtil.getMenuGetUri(restaurantId))
                 .ifNoneMatch(restaurantIdEtags.getOrDefault(restaurantId, "noetag"))
                 .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
@@ -91,20 +90,20 @@ public class CategoryServiceImpl implements CategoryService {
             restaurantIdEtags.put(restaurantId, jsonResponse.getHeaders().getETag());
             DocumentContext context = JsonPath.parse(jsonResponse.getBody());
             if (context.read("$.status", Integer.class) != 1)
-                throw new IllegalStateException("Was waiting for status 1 in response, response = " + jsonResponse);
+                throw new IOException("Was waiting for status 1 in response, response = " + jsonResponse);
 
             List<Category> categories = context.read("$.categories", CATEGORY_DTO_TYPE_REF)
                     .stream()
                     .map(CategoryDto::toCategory)
                     .collect(Collectors.toList());
             categories.forEach(category -> category.setRestaurant(restaurantRepository.findByRestaurantId(restaurantId)
-                    .orElseThrow(() -> new IllegalStateException("Restaurant must be found at this point"))));
+                    .orElseThrow(() -> new AssertionError("Restaurant must be found at this point"))));
 
             List<Category> result = categoryRepository.saveAll(categories);
             productService.updateProductInformation(result);
             return result;
         } else {
-            throw new IllegalStateException("Was waiting for status code 200 or 304, got response " + jsonResponse);
+            throw new IOException("Was waiting for status code 200 or 304, got response " + jsonResponse);
         }
     }
 

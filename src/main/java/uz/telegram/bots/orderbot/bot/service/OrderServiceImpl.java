@@ -21,6 +21,7 @@ import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -79,7 +80,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public void postOrder(Order order, TelegramUser user) {
+    public void postOrder(Order order, TelegramUser user) throws IOException {
         List<ProductWithCount> products = productWithCountRepository.getWithProductsByOrderId(order.getId());
         Restaurant restaurant = restaurantRepository.getByOrderId(order.getId());
         OrderWrapper orderWrapper = new OrderWrapper(jowiProperties.getApiKey(), jowiProperties.getSig(), restaurant.getRestaurantId());
@@ -103,7 +104,7 @@ public class OrderServiceImpl implements OrderService {
         String jsonResponse = response.getBody();
         DocumentContext context = JsonPath.parse(jsonResponse);
         if (context.read("$.status", Integer.class) != 1) {
-            throw new IllegalStateException("Was waiting for status 1 in response, response = " + jsonResponse);
+            throw new IOException("Was waiting for status 1 in response, response = " + jsonResponse);
         }
     }
 }

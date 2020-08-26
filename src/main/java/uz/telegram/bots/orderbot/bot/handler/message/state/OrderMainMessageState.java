@@ -12,6 +12,8 @@ import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.*;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +93,9 @@ class OrderMainMessageState implements MessageState {
                         categories.get(index), order);
             else
                 DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+        } catch (IOException e) {
+            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+            throw new UncheckedIOException(e);
         } finally {
             lock.unlock();
         }

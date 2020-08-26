@@ -14,6 +14,7 @@ import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.Restaurant;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ public class RestaurantServiceImpl implements RestaurantService {
      * @return loaded from database restaurants
      * @throws IllegalStateException if incorrect or invalid response received
      */
-    public List<Restaurant> updateAndFetchRestaurants() {
+    public List<Restaurant> updateAndFetchRestaurants() throws IOException {
         RequestEntity<Void> requestEntity = RequestEntity.get(uriUtil.getRestaurantsGetUri())
                 .ifNoneMatch(etag)
                 .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
@@ -63,7 +64,7 @@ public class RestaurantServiceImpl implements RestaurantService {
             etag = jsonResponse.getHeaders().getETag();
             DocumentContext context = JsonPath.parse(jsonResponse.getBody());
             if (context.read("$.status", Integer.class) != 1)
-                throw new IllegalStateException("Was waiting for status 1 in response, response = " + jsonResponse);
+                throw new IOException("Was waiting for status 1 in response, response = " + jsonResponse);
 
             List<Restaurant> restaurants = context.read("$.restaurants", RESTAURANTS_TYPE_REF)
                     .stream()
@@ -72,7 +73,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
             return restaurantRepository.saveAll(restaurants);
         } else {
-            throw new IllegalStateException("Was waiting for status code 200 or 304, got response " + jsonResponse);
+            throw new IOException("Was waiting for status code 200 or 304, got response " + jsonResponse);
         }
     }
 
