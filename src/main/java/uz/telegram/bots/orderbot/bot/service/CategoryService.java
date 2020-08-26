@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CategoryService {
-    List<Category> updateAndFetchCategories(String restaurantId) throws IOException;
+    List<Category> updateAndFetchNonEmptyCategories(String restaurantId) throws IOException;
     Optional<Category> findByNameAndRestaurantId(String name, int restaurantId);
-    List<Category> findAll();
-    List<Category> findByRestaurantStringId(String id);
 
-    List<Category> findByOrderId(long orderId);
+    List<Category> findNonEmptyByRestaurantStringId(String id);
+
+    List<Category> findNonEmptyByOrderId(long orderId);
 }

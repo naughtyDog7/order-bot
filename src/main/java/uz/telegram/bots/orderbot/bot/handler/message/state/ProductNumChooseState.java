@@ -120,7 +120,7 @@ class ProductNumChooseState implements MessageState {
         }
 
         productWithCountService.save(productWithCount);
-        List<Category> categories = categoryService.findByRestaurantStringId(restaurant.getRestaurantId());
+        List<Category> categories = categoryService.findNonEmptyByRestaurantStringId(restaurant.getRestaurantId());
         int basketNumItems = productWithCountService.getBasketItemsCount(order.getId());
         ToOrderMainHandler.builder()
                 .bot(bot)

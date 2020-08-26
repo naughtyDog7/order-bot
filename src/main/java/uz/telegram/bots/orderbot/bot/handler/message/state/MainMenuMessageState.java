@@ -129,7 +129,7 @@ class MainMenuMessageState implements MessageState {
                         .setText(rb.getString("order-message") + getRandMealEmoji());
 
                 // TODO change id to chosen by user restaurant id
-                List<Category> categories = categoryService.updateAndFetchCategories(restaurant.getRestaurantId());
+                List<Category> categories = categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
                 setOrderKeyboard(sendMessage, telegramUser.getLangISO(), categories);
 
                 DeleteMessage deleteLoadingMessage = new DeleteMessage()

@@ -40,17 +40,47 @@ public class ToOrderMainHandler {
         Objects.requireNonNull(ku);
         Objects.requireNonNull(categories);
 
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("order-message-2") + getRandMealEmoji());
-        setKeyboard(sendMessage, basketNumItems);
+        if (categories.isEmpty()) {
+            handleEmptyCategories(basketNumItems);
+        } else {
+            SendMessage sendMessage = new SendMessage()
+                    .setChatId(telegramUser.getChatId())
+                    .setText(rb.getString("order-message-2") + getRandMealEmoji());
+            setKeyboard(sendMessage, basketNumItems);
 
-        try {
-            bot.execute(sendMessage);
-            telegramUser.setCurState(ORDER_MAIN);
-            service.save(telegramUser);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
+            try {
+                bot.execute(sendMessage);
+                telegramUser.setCurState(ORDER_MAIN);
+                service.save(telegramUser);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void handleEmptyCategories(int basketNumItems) {
+        if (basketNumItems == 0) {
+            SendMessage sendMessage = new SendMessage()
+                    .setChatId(telegramUser.getChatId())
+                    .setText(rb.getString("currently-no-available-courses"));
+            try {
+                bot.execute(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        } else {
+            SendMessage sendMessage = new SendMessage()
+                    .setChatId(telegramUser.getChatId())
+                    .setText(rb.getString("no-non-empty-categories-left"));
+            setKeyboard(sendMessage, basketNumItems);
+
+            try {
+                bot.execute(sendMessage);
+                telegramUser.setCurState(ORDER_MAIN);
+                service.save(telegramUser);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
         }
     }
 

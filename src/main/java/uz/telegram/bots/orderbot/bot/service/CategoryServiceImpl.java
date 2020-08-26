@@ -35,11 +35,6 @@ public class CategoryServiceImpl implements CategoryService {
     private final RestTemplate restTemplate;
     private final UriUtil uriUtil;
 
-    @Override
-    public List<Category> findByOrderId(long orderId) {
-        return categoryRepository.findByOrderId(orderId);
-    }
-
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository, RestaurantRepository restaurantRepository,
                                ProductService productService, RestTemplate restTemplate, UriUtil uriUtil) {
@@ -70,7 +65,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     //this method fetches categories from jowi api, if anything changed, saves to repo
-    public List<Category> updateAndFetchCategories(String restaurantId) throws IOException {
+    public List<Category> updateAndFetchNonEmptyCategories(String restaurantId) throws IOException {
         RequestEntity<Void> requestEntity = RequestEntity.get(uriUtil.getMenuGetUri(restaurantId))
                 .ifNoneMatch(restaurantIdEtags.getOrDefault(restaurantId, "noetag"))
                 .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
@@ -78,7 +73,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         ResponseEntity<String> jsonResponse = restTemplate.exchange(requestEntity, String.class);
         if (jsonResponse.getStatusCodeValue() == HttpStatus.NOT_MODIFIED.value()) {
-            return categoryRepository.findAllByRestaurantRestaurantId(restaurantId);
+            return categoryRepository.findNonEmptyByRestaurantStringId(restaurantId);
 
 
         } else if (jsonResponse.getStatusCodeValue() == HttpStatus.OK.value()) {
@@ -102,19 +97,17 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
-
-
     public Optional<Category> findByNameAndRestaurantId(String name, int restaurantId) {
         return categoryRepository.findByNameAndRestaurantId(name, restaurantId);
     }
 
     @Override
-    public List<Category> findAll() {
-        return categoryRepository.findAll();
+    public List<Category> findNonEmptyByRestaurantStringId(String id) {
+        return categoryRepository.findNonEmptyByRestaurantStringId(id);
     }
 
     @Override
-    public List<Category> findByRestaurantStringId(String id) {
-        return categoryRepository.findAllByRestaurantRestaurantId(id);
+    public List<Category> findNonEmptyByOrderId(long orderId) {
+        return categoryRepository.findAllNonEmptyByOrderId(orderId);
     }
 }

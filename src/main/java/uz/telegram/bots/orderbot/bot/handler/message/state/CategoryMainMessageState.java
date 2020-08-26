@@ -72,7 +72,7 @@ class CategoryMainMessageState implements MessageState {
             lock.lock();
             Restaurant restaurant = restaurantService.getByOrderId(order.getId());
             if (text.equals(backButtonText)) {
-                List<Category> categories = categoryService.findByRestaurantStringId(restaurant.getRestaurantId());
+                List<Category> categories = categoryService.findNonEmptyByRestaurantStringId(restaurant.getRestaurantId());
                 int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
                 handleBack(bot, telegramUser, rb, categories, basketItemsNum);
             } else {

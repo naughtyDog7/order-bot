@@ -130,7 +130,7 @@ class BasketMainMessageState implements MessageState {
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, int basketNumItems) {
-        List<Category> categories = categoryService.findByOrderId(order.getId());
+        List<Category> categories = categoryService.findNonEmptyByOrderId(order.getId());
         ToOrderMainHandler.builder()
                 .bot(bot)
                 .rb(rb)
