@@ -83,6 +83,10 @@ class BasketMainMessageState implements MessageState {
 
     private void handleItemDelete(TelegramLongPollingBot bot, TelegramUser telegramUser,
                                   ResourceBundle rb, Order order, ProductWithCount productWithCount, String productName, int basketNumItems) {
+        int count = productWithCount.getCount();
+        Product product = productService.fromProductWithCount(productWithCount.getId());
+        product.setCountLeft(product.getCountLeft() + count);
+        productService.save(product);
         productWithCountService.deleteById(productWithCount.getId());
         //if no products left, go back to order main
         if (basketNumItems == 1) {
