@@ -24,8 +24,6 @@ public class TextUtil {
         this.productService = productService;
     }
 
-
-
     public static final List<String> MEAL_EMOJIS = List.of("\uD83E\uDD57"/*🥗*/, "\uD83E\uDD58"/*🥘*/, "\uD83C\uDF5C"/*🍜*/,
             "\uD83C\uDF5D"/*🍝*/, "\uD83C\uDF72"/*🍲*/, "\uD83C\uDF5B"/*🍛*/, "\uD83C\uDF71"/*🍱*/, "\uD83E\uDD5F"/*🥟*/, "\uD83C\uDF5A" /*🍚*/,
             "\uD83E\uDD59"/*🥙*/, "\uD83C\uDF75"/*🍵*/, "☕"/*☕*/);
@@ -35,11 +33,11 @@ public class TextUtil {
 
     public String appendProducts(List<ProductWithCount> products, ResourceBundle rb) {
         StringBuilder result = new StringBuilder();
-        double totalSum = 0.0;
+        long totalSum = 0L;
         for (ProductWithCount productWithCount : products) {
             Product product = productService.fromProductWithCount(productWithCount.getId());
             String appendToCount = rb.getString("count-append");
-            int priceForProduct = product.getPrice() * productWithCount.getCount();
+            long priceForProduct = product.getPrice() * (long)productWithCount.getCount();
             totalSum += priceForProduct;
             result.append("\n")
                     .append(product.getName())

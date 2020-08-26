@@ -13,9 +13,9 @@ public class LockFactory {
     private final Map<Long, Lock> locks = new HashMap<>();
 
     public Lock getLockForChatId(long chatId) {
-        return locks.computeIfAbsent(chatId, key -> new ReentrantLock());
+        return locks.computeIfAbsent(chatId, key -> new ReentrantLock(true));
     }
 
     @Getter
-    private final Lock resourceLock = new ReentrantLock();
+    private final Lock resourceLock = new ReentrantLock(true);
 }

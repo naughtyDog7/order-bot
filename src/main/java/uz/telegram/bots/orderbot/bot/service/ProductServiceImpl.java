@@ -27,11 +27,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<Product> updateAndFetchProductsForCategory(Category category) {
-        return null;
-    }
-
-    @Override
     public List<Product> getAllByCategoryId(int categoryId) {
         return productRepository.getAllByCategoryId(categoryId);
     }

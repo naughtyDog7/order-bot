@@ -86,7 +86,7 @@ class OrderMainMessageState implements MessageState {
 
             Restaurant restaurant = restaurantService.getByOrderId(order.getId());
 
-            List<Category> categories = categoryService.updateAndFetchCategories(restaurant.getRestaurantId());
+            List<Category> categories = categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
             int index = Category.getNames(categories).indexOf(text);
             if (index != -1)
                 handleCategory(bot, telegramUser, rb,

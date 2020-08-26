@@ -8,7 +8,6 @@ import java.util.Optional;
 
 public interface ProductService {
 
-    List<Product> updateAndFetchProductsForCategory(Category category);
     List<Product> getAllByCategoryId(int categoryId);
     Optional<Product> getByCategoryIdAndName(int categoryId, String name);
     Optional<Product> getByStringProductId(String id);

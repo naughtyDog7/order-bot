@@ -164,7 +164,9 @@ class MainMenuMessageState implements MessageState {
         //doing this to not change keyboard from kf
 
         ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(rows);
-        keyboard = ku.concatLastTwoRows(keyboard);
+        int size = rows.size();
+        if (size > 2 && rows.get(size - 2).size() <= 1 && rows.get(size - 1).size() <= 1)
+            keyboard = ku.concatLastTwoRows(keyboard);
         sendMessage.setReplyMarkup(keyboard
                 .setResizeKeyboard(true));
     }
