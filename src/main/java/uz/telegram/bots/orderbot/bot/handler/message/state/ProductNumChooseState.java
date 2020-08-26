@@ -104,7 +104,7 @@ class ProductNumChooseState implements MessageState {
             return;
         }
         if (numChosen > countLeft) {
-            handleNotEnough(bot, rb, order);
+            handleNotEnough(bot, telegramUser, rb, order, product);
             return;
         }
         product.setCountLeft(product.getCountLeft() - numChosen);
@@ -134,8 +134,18 @@ class ProductNumChooseState implements MessageState {
                 .handleToOrderMain(basketNumItems);
     }
 
-    private void handleNotEnough(TelegramLongPollingBot bot, ResourceBundle rb, Order order) {
+    private void handleNotEnough(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Product product) {
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("product-num-not-enough"));
 
+        setProductKeyboard(sendMessage, telegramUser.getLangISO(), product);
+
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleOutOfStock(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Restaurant restaurant) {
