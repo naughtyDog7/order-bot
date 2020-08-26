@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Component
 public class KeyboardFactory {
 
-    private Map<String, Map<KeyboardType, ReplyKeyboardMarkup>> keyboardsByLang = new HashMap<>();
+    private final Map<String, Map<KeyboardType, ReplyKeyboardMarkup>> keyboardsByLang = new HashMap<>();
     private final KeyboardUtil ku;
     private final ResourceBundleFactory rbf;
 

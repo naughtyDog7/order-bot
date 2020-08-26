@@ -11,5 +11,5 @@ public interface TelegramUserService {
     Optional<TelegramUser> findById(Integer integer);
     List<TelegramUser> getCommentReceivers();
     TelegramUser getOrSaveUser(Update update);
-    public <S extends TelegramUser> S save(S s);
+    <S extends TelegramUser> S save(S s);
 }

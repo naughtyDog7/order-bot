@@ -31,8 +31,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final RestaurantRepository restaurantRepository;
-    private final ProductRepository productRepository;
-    private final OrderRepository orderRepository;
     private final ProductService productService;
     private final RestTemplate restTemplate;
     private final UriUtil uriUtil;
@@ -44,12 +42,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository, RestaurantRepository restaurantRepository,
-                               ProductRepository productRepository, OrderRepository orderRepository,
                                ProductService productService, RestTemplate restTemplate, UriUtil uriUtil) {
         this.categoryRepository = categoryRepository;
         this.restaurantRepository = restaurantRepository;
-        this.productRepository = productRepository;
-        this.orderRepository = orderRepository;
         this.productService = productService;
         this.restTemplate = restTemplate;
         this.uriUtil = uriUtil;
