@@ -22,17 +22,15 @@ import uz.telegram.bots.orderbot.bot.util.LockFactory;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
 
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.LOCATION_SENDING;
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.LOCATION_KEYBOARD;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 
 @Component
-class PhoneNumEnterState implements MessageState {
+class OrderPhoneNumState implements MessageState {
     private final ResourceBundleFactory rbf;
     private final TelegramUserService userService;
     private final OrderService orderService;
@@ -43,7 +41,7 @@ class PhoneNumEnterState implements MessageState {
     private final LockFactory lf;
 
     @Autowired
-    PhoneNumEnterState(ResourceBundleFactory rbf, TelegramUserService userService,
+    OrderPhoneNumState(ResourceBundleFactory rbf, TelegramUserService userService,
                        OrderService orderService, CategoryService categoryService,
                        ProductWithCountService pwcService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
         this.rbf = rbf;
@@ -65,18 +63,19 @@ class PhoneNumEnterState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Optional<Order> optOrder = orderService.getActive(telegramUser);
+            Order order = orderService.getActive(telegramUser)
+                    .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (message.hasText()) {
                 String btnBack = rb.getString("btn-back");
                 String btnConfirm = rb.getString("btn-confirm-phone");
                 String btnChangeNum = rb.getString("btn-change-existing-phone-num");
                 String text = message.getText();
                 if (text.equals(btnBack))
-                    handleBack(bot, telegramUser, rb, optOrder);
+                    handleBack(bot, telegramUser, rb, order);
                 else if (text.equals(btnConfirm))
-                    handleConfirmPhoneNumInOrder(bot, telegramUser, rb);
+                    handleConfirmPhoneNum(bot, telegramUser, rb);
                 else if (text.equals(btnChangeNum))
-                    handleChangePhoneNumInOrder(bot, telegramUser, rb);
+                    handleChangePhoneNum(bot, telegramUser, rb);
                 else
                     DefaultBadRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
                 return;
@@ -87,14 +86,14 @@ class PhoneNumEnterState implements MessageState {
             Contact contact = message.getContact();
             String phoneNum = contact.getPhoneNumber();
 
-            handlePhoneNum(bot, telegramUser, rb, optOrder, phoneNum);
+            handleNewPhoneNum(bot, telegramUser, rb, phoneNum);
 
         } finally {
             lock.unlock();
         }
     }
 
-    private void handleConfirmPhoneNumInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+    private void handleConfirmPhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("phone-num-confirmed"));
@@ -107,7 +106,7 @@ class PhoneNumEnterState implements MessageState {
 
     }
 
-    private void handleChangePhoneNumInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+    private void handleChangePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("press-to-send-contact"));
@@ -123,15 +122,7 @@ class PhoneNumEnterState implements MessageState {
         }
     }
 
-    private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Optional<Order> optOrder, String phoneNum) {
-        if (optOrder.isPresent()) {
-            handleNewPhoneNumInOrder(bot, telegramUser, rb, phoneNum);
-        } else {
-            handleInSettings(bot, telegramUser, rb, phoneNum);
-        }
-    }
-
-    private void handleNewPhoneNumInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
+    private void handleNewPhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
         telegramUser.setPhoneNum(phoneNum);
         userService.save(telegramUser);
         SendMessage sendMessage = new SendMessage()
@@ -162,51 +153,19 @@ class PhoneNumEnterState implements MessageState {
         }
     }
 
-    private void handleInSettings(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("phone-set-success"));
-        telegramUser.setPhoneNum(phoneNum);
-        userService.save(telegramUser);
-
-        ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, true);
-        try {
-            bot.execute(sendMessage);
-            telegramUser.setCurState(SETTINGS);
-            userService.save(telegramUser);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Optional<Order> optOrder) {
-        if (optOrder.isPresent()) {
-            long orderId = optOrder.get().getId();
-            List<Category> categories = categoryService.findNonEmptyByOrderId(orderId);
-            int basketNumItems = pwcService.getBasketItemsCount(orderId);
-            ToOrderMainHandler.builder()
-                    .bot(bot)
-                    .service(userService)
-                    .rb(rb)
-                    .telegramUser(telegramUser)
-                    .ku(ku)
-                    .kf(kf)
-                    .categories(categories)
-                    .build()
-                    .handleToOrderMain(basketNumItems);
-        } else {
-            SendMessage sendMessage = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("configure-settings"));
-            ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, telegramUser.getPhoneNum() != null);
-
-            try {
-                bot.execute(sendMessage);
-                telegramUser.setCurState(SETTINGS);
-                userService.save(telegramUser);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        }
+    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        long orderId = order.getId();
+        List<Category> categories = categoryService.findNonEmptyByOrderId(orderId);
+        int basketNumItems = pwcService.getBasketItemsCount(orderId);
+        ToOrderMainHandler.builder()
+                .bot(bot)
+                .service(userService)
+                .rb(rb)
+                .telegramUser(telegramUser)
+                .ku(ku)
+                .kf(kf)
+                .categories(categories)
+                .build()
+                .handleToOrderMain(basketNumItems);
     }
 }

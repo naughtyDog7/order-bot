@@ -7,6 +7,8 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.*;
@@ -14,12 +16,12 @@ import uz.telegram.bots.orderbot.bot.util.*;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.regex.Pattern;
+
+import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.ORDER_PHONE_NUM;
+import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 
 @Component
 @Slf4j
@@ -145,15 +147,40 @@ class OrderMainMessageState implements MessageState {
 
 
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        ToPhoneNumHandler.builder()
-                .bot(bot)
-                .service(userService)
-                .telegramUser(telegramUser)
-                .rb(rb)
-                .ku(ku)
-                .kf(kf)
-                .build()
-                .handleToPhoneNum(true);
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId());
+        if (telegramUser.getPhoneNum() == null) {
+            sendMessage.setText(rb.getString("start-execute-order-no-phone") + "\n\n" + rb.getString("press-to-send-contact"));
+            setNewPhoneKeyboard(sendMessage, telegramUser.getLangISO());
+        } else {
+            sendMessage.setText(rb.getString("start-execute-order-with-phone")
+                    .replace("{phoneNum}", telegramUser.getPhoneNum()));
+            setConfirmPhoneKeyboard(sendMessage, rb, telegramUser.getLangISO());
+        }
+        try {
+            bot.execute(sendMessage);
+            telegramUser.setCurState(ORDER_PHONE_NUM);
+            userService.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setNewPhoneKeyboard(SendMessage sendMessage, String langISO) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, langISO);
+        sendMessage.setReplyMarkup(
+                ku.addBackButtonLast(keyboard, langISO)
+                        .setResizeKeyboard(true));
+    }
+
+    private void setConfirmPhoneKeyboard(SendMessage sendMessage, ResourceBundle rb, String langISO) {
+        KeyboardRow keyboardButtons = new KeyboardRow();
+        keyboardButtons.add(rb.getString("btn-confirm-phone"));
+        keyboardButtons.add(rb.getString("btn-change-existing-phone-num"));
+        List<KeyboardRow> rows = new ArrayList<>();
+        rows.add(keyboardButtons);
+        sendMessage.setReplyMarkup(ku.addBackButtonLast(rows, langISO)
+                .setResizeKeyboard(true));
     }
 
     private void handleBasket(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {

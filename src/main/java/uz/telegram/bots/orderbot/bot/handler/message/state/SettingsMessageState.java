@@ -6,6 +6,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
@@ -17,6 +18,7 @@ import java.util.ResourceBundle;
 
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.LANGUAGE_CONFIGURE;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.LANG_KEYBOARD;
+import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 
 @Component
 class SettingsMessageState implements MessageState {
@@ -62,15 +64,25 @@ class SettingsMessageState implements MessageState {
     }
 
     private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        ToPhoneNumHandler.builder()
-                .bot(bot)
-                .service(service)
-                .kf(kf)
-                .ku(ku)
-                .rb(rb)
-                .telegramUser(telegramUser)
-                .build()
-                .handleToPhoneNum(false);
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("press-to-send-contact"));
+        setPhoneKeyboard(sendMessage, telegramUser.getLangISO());
+
+        try {
+            bot.execute(sendMessage);
+            telegramUser.setCurState(TelegramUser.UserState.SETTINGS_PHONE_NUM);
+            service.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setPhoneKeyboard(SendMessage sendMessage, String langISO) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, langISO);
+        sendMessage.setReplyMarkup(
+                ku.addBackButtonLast(keyboard, langISO)
+                        .setResizeKeyboard(true));
     }
 
     private void handleChangeLanguage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

@@ -84,7 +84,8 @@ public class TelegramUser {
         CATEGORY_MAIN,
         PRODUCT_NUM_CHOOSE,
         BASKET_MAIN,
-        PHONE_NUM_ENTER,
+        SETTINGS_PHONE_NUM,
+        ORDER_PHONE_NUM,
         LOCATION_SENDING
     }
 
