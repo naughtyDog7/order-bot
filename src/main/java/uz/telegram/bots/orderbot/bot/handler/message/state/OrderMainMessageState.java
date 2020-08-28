@@ -145,7 +145,15 @@ class OrderMainMessageState implements MessageState {
 
 
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        
+        ToPhoneNumHandler.builder()
+                .bot(bot)
+                .service(userService)
+                .telegramUser(telegramUser)
+                .rb(rb)
+                .ku(ku)
+                .kf(kf)
+                .build()
+                .handleToPhoneNum(true);
     }
 
     private void handleBasket(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {

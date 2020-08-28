@@ -3,6 +3,7 @@ package uz.telegram.bots.orderbot.bot.util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import uz.telegram.bots.orderbot.bot.properties.BotProperties;
 
@@ -81,6 +82,16 @@ public class KeyboardFactory {
                 KeyboardRow keyboardButtons2 = new KeyboardRow();
                 keyboardButtons2.add(rb.getString("btn-cancel-order"));
                 return new ReplyKeyboardMarkup(List.of(keyboardButtons1, keyboardButtons2));
+            }
+        },
+        PHONE_NUM_ENTER_KEYBOARD {
+            @Override
+            ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
+                KeyboardRow row = new KeyboardRow();
+                KeyboardButton keyboardButton = new KeyboardButton(rb.getString("btn-send-contact"))
+                        .setRequestContact(true);
+                row.add(keyboardButton);
+                return new ReplyKeyboardMarkup(List.of(row));
             }
         };
 

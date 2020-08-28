@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.SETTINGS_KEYBOARD;
+
 @Component
 public class KeyboardUtil {
 
@@ -126,6 +128,20 @@ public class KeyboardUtil {
             keyboardRow.add(product.getName() + " " + rb.getString("remove-product-char"));
             rows.add(keyboardRow);
         });
+        sendMessage.setReplyMarkup(addBackButtonLast(rows, langISO)
+                .setResizeKeyboard(true));
+    }
+
+    public void setSettingsKeyboard(SendMessage sendMessage, ResourceBundle rb, String langISO, KeyboardFactory kf, boolean phoneNumExists) {
+        List<KeyboardRow> rows = new ArrayList<>(kf.getKeyboard(SETTINGS_KEYBOARD, langISO).getKeyboard());
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.addAll(rows.get(0));
+        if (phoneNumExists) {
+            firstRow.add(rb.getString("btn-change-existing-phone-num"));
+        } else {
+            firstRow.add(rb.getString("btn-set-new-phone-num"));
+        }
+        rows.set(0, firstRow);
         sendMessage.setReplyMarkup(addBackButtonLast(rows, langISO)
                 .setResizeKeyboard(true));
     }

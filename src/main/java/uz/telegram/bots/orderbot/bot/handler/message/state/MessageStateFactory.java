@@ -53,6 +53,9 @@ public class MessageStateFactory {
             case BASKET_MAIN:
                 ms = messageStatesMap.get(BasketMainMessageState.class);
                 break;
+            case PHONE_NUM_ENTER:
+                ms = messageStatesMap.get(PhoneNumEnterState.class);
+                break;
             default:
                 ms = null;
         }

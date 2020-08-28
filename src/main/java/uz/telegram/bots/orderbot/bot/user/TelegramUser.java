@@ -84,7 +84,7 @@ public class TelegramUser {
         CATEGORY_MAIN,
         PRODUCT_NUM_CHOOSE,
         BASKET_MAIN,
-        CONTACT_SEND
+        PHONE_NUM_ENTER
     }
 
     public enum Role {

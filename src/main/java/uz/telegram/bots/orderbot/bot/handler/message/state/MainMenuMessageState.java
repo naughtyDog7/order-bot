@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -10,7 +11,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import uz.telegram.bots.orderbot.bot.service.*;
+import uz.telegram.bots.orderbot.bot.service.CategoryService;
+import uz.telegram.bots.orderbot.bot.service.OrderService;
+import uz.telegram.bots.orderbot.bot.service.RestaurantService;
+import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
 import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
@@ -22,13 +26,17 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.*;
-import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.SETTINGS_KEYBOARD;
 import static uz.telegram.bots.orderbot.bot.util.TextUtil.getRandMealEmoji;
 
 @Component
+@Slf4j
 class MainMenuMessageState implements MessageState {
 
     private final ResourceBundleFactory rbf;
@@ -84,7 +92,8 @@ class MainMenuMessageState implements MessageState {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("configure-settings"));
-        setSettingsKeyboard(sendMessage, telegramUser.getLangISO());
+        ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, telegramUser.getPhoneNum() != null);
+
         try {
             bot.execute(sendMessage);
             telegramUser.setCurState(SETTINGS);
@@ -92,14 +101,6 @@ class MainMenuMessageState implements MessageState {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-    }
-
-    private void setSettingsKeyboard(SendMessage sendMessage, String langISO) {
-        ReplyKeyboardMarkup keyboard = kf.getKeyboard(SETTINGS_KEYBOARD, langISO)
-                .setResizeKeyboard(true);
-        keyboard = ku.addBackButtonLast(keyboard, langISO) //if no other buttons, use KeyboardFactory#getBackButtonKeyboard
-                .setResizeKeyboard(true);
-        sendMessage.setReplyMarkup(keyboard);
     }
 
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

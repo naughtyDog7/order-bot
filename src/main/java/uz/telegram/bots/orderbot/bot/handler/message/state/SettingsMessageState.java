@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
+import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.util.ResourceBundle;
@@ -23,12 +24,14 @@ class SettingsMessageState implements MessageState {
     private final ResourceBundleFactory rbf;
     private final TelegramUserService service;
     private final KeyboardFactory kf;
+    private final KeyboardUtil ku;
 
     @Autowired
-    SettingsMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf) {
+    SettingsMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf, KeyboardUtil ku) {
         this.rbf = rbf;
         this.service = service;
         this.kf = kf;
+        this.ku = ku;
     }
 
     @Override
@@ -41,17 +44,33 @@ class SettingsMessageState implements MessageState {
         }
 
         String changeLanguage = rb.getString("btn-settings-language-choose");
+        String phoneNumSet = rb.getString("btn-set-new-phone-num");
+        String phoneNumUpdate = rb.getString("btn-change-existing-phone-num");
         String back = rb.getString("btn-back");
 
         String messageText = message.getText();
 
         if (messageText.equals(changeLanguage)) {
             handleChangeLanguage(bot, telegramUser, rb);
+        } else if (messageText.equals(phoneNumSet) || messageText.equals(phoneNumUpdate)) {
+            handlePhoneNum(bot, telegramUser, rb);
         } else if (messageText.equals(back)) {
             handleBack(bot, telegramUser, rb);
         } else {
             DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
         }
+    }
+
+    private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        ToPhoneNumHandler.builder()
+                .bot(bot)
+                .service(service)
+                .kf(kf)
+                .ku(ku)
+                .rb(rb)
+                .telegramUser(telegramUser)
+                .build()
+                .handleToPhoneNum(false);
     }
 
     private void handleChangeLanguage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
