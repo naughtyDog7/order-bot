@@ -129,8 +129,16 @@ class MainMenuMessageState implements MessageState {
                         .setChatId(telegramUser.getChatId())
                         .setText(rb.getString("order-message") + getRandMealEmoji());
 
-                // TODO change id to chosen by user restaurant id
-                List<Category> categories = categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+                CompletableFuture<List<Category>> future = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+                        // TODO change id to chosen by user restaurant id
+                    } catch (IOException e) {
+                        JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+                        throw new UncheckedIOException(e);
+                    }
+                });
+                List<Category> categories = future.get(5, TimeUnit.SECONDS);
                 setOrderKeyboard(sendMessage, telegramUser.getLangISO(), categories);
 
                 DeleteMessage deleteLoadingMessage = new DeleteMessage()
@@ -141,8 +149,14 @@ class MainMenuMessageState implements MessageState {
                 bot.execute(sendMessage);
                 telegramUser.setCurState(ORDER_MAIN);
                 userService.save(telegramUser);
-            } catch (TelegramApiException e) {
+            } catch (TelegramApiException | ExecutionException e) {
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
+            } catch (TimeoutException e) {
+                JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+                log.error("Jowi server timeout");
             }
         } catch (IOException e) {
             JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
