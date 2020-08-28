@@ -94,14 +94,19 @@ class CategoryMainMessageState implements MessageState {
     }
 
     private void handleProduct(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Product product, Order order) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage sendMessage1 = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(String.format("%s %d %s", rb.getString("this-courses-price-is"), product.getPrice(), rb.getString("uzs-text")));
+
+        SendMessage sendMessage2 = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("choose-product-num"));
 
-        setProductKeyboard(sendMessage, telegramUser.getLangISO(), product);
+        setProductKeyboard(sendMessage2, telegramUser.getLangISO(), product);
 
         try {
-            bot.execute(sendMessage);
+            bot.execute(sendMessage1);
+            bot.execute(sendMessage2);
             telegramUser.setCurState(TelegramUser.UserState.PRODUCT_NUM_CHOOSE);
             service.save(telegramUser);
             order.setChosenProductStringId(product.getProductId());
