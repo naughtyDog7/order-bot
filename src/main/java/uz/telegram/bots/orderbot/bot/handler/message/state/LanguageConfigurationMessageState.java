@@ -6,7 +6,6 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
@@ -17,7 +16,6 @@ import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 import java.util.ResourceBundle;
 
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
-import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.SETTINGS_KEYBOARD;
 
 @Component
 class LanguageConfigurationMessageState implements MessageState {
@@ -45,19 +43,20 @@ class LanguageConfigurationMessageState implements MessageState {
         }
 
         String lang = message.getText();
-        if (lang.contains(rb.getString("btn-uzb-lang")))
+        if (lang.equals(rb.getString("btn-uzb-lang")))
             telegramUser.setLangISO("uzb");
-        else if (lang.contains(rb.getString("btn-rus-lang")))
+        else if (lang.equals(rb.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
         else {
             DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        String newLangISO = telegramUser.getLangISO();
+        rb = rbf.getMessagesBundle(newLangISO);
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("language-chosen"));
-
-        setSettingsKeyboard(sendMessage, telegramUser.getLangISO());
+        ku.setSettingsKeyboard(sendMessage, rb, newLangISO, kf, telegramUser.getPhoneNum() != null);
         try {
             bot.execute(sendMessage);
             telegramUser.setCurState(SETTINGS);
@@ -65,13 +64,5 @@ class LanguageConfigurationMessageState implements MessageState {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-    }
-
-    private void setSettingsKeyboard(SendMessage sendMessage, String langISO) {
-        ReplyKeyboardMarkup keyboard = kf.getKeyboard(SETTINGS_KEYBOARD, langISO)
-                .setResizeKeyboard(true);
-        keyboard = ku.addBackButtonLast(keyboard, langISO); //if not other buttons, user KeyboardFactory#getBackButtonKeyboard
-        sendMessage.setReplyMarkup(keyboard
-                .setResizeKeyboard(true));
     }
 }
