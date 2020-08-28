@@ -15,7 +15,7 @@ import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.MAIN_MEN
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.MAIN_MENU_KEYBOARD;
 
 @Builder
-public class ToMainMenuHandler {
+class ToMainMenuHandler {
     private final TelegramLongPollingBot bot;
     private final TelegramUser telegramUser;
     private final ResourceBundle rb;

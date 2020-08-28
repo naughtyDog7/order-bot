@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Contact;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.CategoryService;
 import uz.telegram.bots.orderbot.bot.service.OrderService;
@@ -25,7 +26,10 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
 
+import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.LOCATION_SENDING;
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
+import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.LOCATION_KEYBOARD;
+import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 
 @Component
 class PhoneNumEnterState implements MessageState {
@@ -53,6 +57,7 @@ class PhoneNumEnterState implements MessageState {
     }
 
     @Override
+    //can come as contact, back button, confirm button, and change button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
@@ -63,9 +68,15 @@ class PhoneNumEnterState implements MessageState {
             Optional<Order> optOrder = orderService.getActive(telegramUser);
             if (message.hasText()) {
                 String btnBack = rb.getString("btn-back");
+                String btnConfirm = rb.getString("btn-confirm-phone");
+                String btnChangeNum = rb.getString("btn-change-existing-phone-num");
                 String text = message.getText();
                 if (text.equals(btnBack))
                     handleBack(bot, telegramUser, rb, optOrder);
+                else if (text.equals(btnConfirm))
+                    handleConfirmPhoneNumInOrder(bot, telegramUser, rb);
+                else if (text.equals(btnChangeNum))
+                    handleChangePhoneNumInOrder(bot, telegramUser, rb);
                 else
                     DefaultBadRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
                 return;
@@ -83,11 +94,71 @@ class PhoneNumEnterState implements MessageState {
         }
     }
 
+    private void handleConfirmPhoneNumInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("phone-num-confirmed"));
+        try {
+            bot.execute(sendMessage);
+            toLocationChoosing(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void handleChangePhoneNumInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("press-to-send-contact"));
+
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, telegramUser.getLangISO());
+        sendMessage.setReplyMarkup(ku.addBackButtonLast(keyboard, telegramUser.getLangISO())
+                .setResizeKeyboard(true));
+
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Optional<Order> optOrder, String phoneNum) {
         if (optOrder.isPresent()) {
-            handleInOrder(bot, telegramUser, rb, optOrder.get());
+            handleNewPhoneNumInOrder(bot, telegramUser, rb, phoneNum);
         } else {
             handleInSettings(bot, telegramUser, rb, phoneNum);
+        }
+    }
+
+    private void handleNewPhoneNumInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
+        telegramUser.setPhoneNum(phoneNum);
+        userService.save(telegramUser);
+        SendMessage sendMessage = new SendMessage()
+                .setText(rb.getString("phone-set-success"))
+                .setChatId(telegramUser.getChatId());
+        try {
+            bot.execute(sendMessage);
+            toLocationChoosing(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toLocationChoosing(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage2 = new SendMessage()
+                .setText(rb.getString("request-send-location"))
+                .setChatId(telegramUser.getChatId());
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(LOCATION_KEYBOARD, telegramUser.getLangISO());
+        sendMessage2.setReplyMarkup(ku.addBackButtonLast(keyboard, telegramUser.getLangISO())
+                .setResizeKeyboard(true));
+
+        try {
+            bot.execute(sendMessage2);
+            telegramUser.setCurState(LOCATION_SENDING);
+            userService.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
 
@@ -106,10 +177,6 @@ class PhoneNumEnterState implements MessageState {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-    }
-
-    private void handleInOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Optional<Order> optOrder) {

@@ -3,7 +3,7 @@ package uz.telegram.bots.orderbot.bot.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uz.telegram.bots.orderbot.bot.repository.LocationRepository;
-import uz.telegram.bots.orderbot.bot.user.Location;
+import uz.telegram.bots.orderbot.bot.user.TelegramLocation;
 
 @Service
 public class LocationServiceImpl implements LocationService {
@@ -16,7 +16,12 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public <S extends Location> S save(S s) {
+    public <S extends TelegramLocation> S save(S s) {
         return locationRepository.save(s);
+    }
+
+    @Override
+    public TelegramLocation findByPaymentInfoId(long id) {
+        return locationRepository.getByPaymentInfoId(id);
     }
 }

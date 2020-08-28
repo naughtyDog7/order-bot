@@ -56,6 +56,9 @@ public class MessageStateFactory {
             case PHONE_NUM_ENTER:
                 ms = messageStatesMap.get(PhoneNumEnterState.class);
                 break;
+            case LOCATION_SENDING:
+                ms = messageStatesMap.get(LocationSendState.class);
+                break;
             default:
                 ms = null;
         }

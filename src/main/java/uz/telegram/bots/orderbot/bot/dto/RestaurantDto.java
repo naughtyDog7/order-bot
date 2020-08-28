@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
-import uz.telegram.bots.orderbot.bot.user.Location;
+import uz.telegram.bots.orderbot.bot.user.TelegramLocation;
 import uz.telegram.bots.orderbot.bot.user.Restaurant;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -23,7 +23,7 @@ public class RestaurantDto {
     private double deliveryPrice;
 
     public static Restaurant toRestaurant(RestaurantDto restaurantDto) {
-        Location location = Location.of(restaurantDto.longitude, restaurantDto.latitude);
+        TelegramLocation location = TelegramLocation.of(restaurantDto.longitude, restaurantDto.latitude);
         Restaurant restaurant = new Restaurant(restaurantDto.id, restaurantDto.title, location);
         restaurant.setOnlineOrder(restaurantDto.onlineOrder);
         restaurant.setDeliveryPrice(restaurantDto.deliveryPrice);

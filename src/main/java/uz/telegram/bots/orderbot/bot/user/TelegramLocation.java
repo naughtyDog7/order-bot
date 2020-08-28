@@ -4,16 +4,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Data
 @Entity
+@Table(name = "location")
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
-public class Location {
+public class TelegramLocation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -21,8 +19,8 @@ public class Location {
 
     private final double longitude, latitude;
 
-    public static Location of(double longitude, double latitude) {
-        return new Location(longitude, latitude);
+    public static TelegramLocation of(double longitude, double latitude) {
+        return new TelegramLocation(longitude, latitude);
     }
 
 }

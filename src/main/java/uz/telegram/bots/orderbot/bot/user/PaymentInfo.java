@@ -15,8 +15,8 @@ public class PaymentInfo {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @OneToOne(cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
-    private Location orderLocation;
+    @OneToOne(cascade = {CascadeType.ALL})
+    private TelegramLocation orderLocation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Restaurant fromRestaurant;

@@ -18,4 +18,9 @@ public class PaymentInfoServiceImpl implements PaymentInfoService {
     public <S extends PaymentInfo> S save(S s) {
         return paymentInfoRepository.save(s);
     }
+
+    @Override
+    public PaymentInfo getFromOrderId(long orderId) {
+        return paymentInfoRepository.getByOrderAndId(orderId);
+    }
 }

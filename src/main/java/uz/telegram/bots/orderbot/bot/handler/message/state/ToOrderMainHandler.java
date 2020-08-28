@@ -22,7 +22,7 @@ import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.CA
 import static uz.telegram.bots.orderbot.bot.util.TextUtil.getRandMealEmoji;
 
 @Builder
-public class ToOrderMainHandler {
+class ToOrderMainHandler {
     private final TelegramLongPollingBot bot;
     private final TelegramUser telegramUser;
     private final ResourceBundle rb;

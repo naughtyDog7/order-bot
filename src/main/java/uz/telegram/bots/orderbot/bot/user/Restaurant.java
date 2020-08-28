@@ -24,7 +24,7 @@ public class Restaurant {
     private final String restaurantTitle;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private final Location location;
+    private final TelegramLocation location;
 
     private boolean onlineOrder;
     private double deliveryPrice;

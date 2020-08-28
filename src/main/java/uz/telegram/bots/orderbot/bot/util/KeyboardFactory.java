@@ -93,6 +93,16 @@ public class KeyboardFactory {
                 row.add(keyboardButton);
                 return new ReplyKeyboardMarkup(List.of(row));
             }
+        },
+        LOCATION_KEYBOARD {
+            @Override
+            ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
+                KeyboardButton keyboardButton = new KeyboardButton(rb.getString("btn-send-location"))
+                        .setRequestLocation(true);
+                KeyboardRow keyboardRow = new KeyboardRow();
+                keyboardRow.add(keyboardButton);
+                return new ReplyKeyboardMarkup(List.of(keyboardRow));
+            }
         };
 
         abstract ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb);

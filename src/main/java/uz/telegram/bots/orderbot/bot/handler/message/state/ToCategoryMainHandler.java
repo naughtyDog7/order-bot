@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.CATEGORY_MAIN;
 
 @Builder
-public class ToCategoryMainHandler {
+class ToCategoryMainHandler {
     private final TelegramLongPollingBot bot;
     private final TelegramUser telegramUser;
     private final ResourceBundle rb;
@@ -61,7 +61,8 @@ public class ToCategoryMainHandler {
 
         ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(rows);
         keyboard = ku.addBackButtonLast(keyboard, langISO);
-        keyboard = ku.concatLastTwoRows(keyboard);
+        if (rows.get(rows.size() - 1).size() <= 1)
+            keyboard = ku.concatLastTwoRows(keyboard);
         sendMessage.setReplyMarkup(keyboard
                 .setResizeKeyboard(true));
     }

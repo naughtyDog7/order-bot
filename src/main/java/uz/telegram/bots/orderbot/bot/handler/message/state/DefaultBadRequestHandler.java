@@ -29,4 +29,15 @@ public class DefaultBadRequestHandler {
             e.printStackTrace();
         }
     }
+
+    public static void handleLocationBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(user.getChatId())
+                .setText(rb.getString("location-bad-request-message"));
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -19,6 +19,8 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
+    private String orderId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "telegram_user_id")
     private final TelegramUser telegramUser;
@@ -61,7 +63,9 @@ public class Order {
 
     public enum OrderState {
         ACTIVE,
-        ORDERED,
-        CANCELLED
+        ACCEPTED,
+        CANCELLED,
+        SENT,
+        DELIVERED
     }
 }
