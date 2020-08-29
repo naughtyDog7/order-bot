@@ -31,15 +31,14 @@ public class TextUtil {
         return MEAL_EMOJIS.get(ThreadLocalRandom.current().nextInt(MEAL_EMOJIS.size()));
     }
 
-    public String appendProducts(List<ProductWithCount> products, ResourceBundle rb) {
-        StringBuilder result = new StringBuilder();
+    public StringBuilder appendProducts(StringBuilder initial, List<ProductWithCount> products, ResourceBundle rb) {
         long totalSum = 0L;
         for (ProductWithCount productWithCount : products) {
             Product product = productService.fromProductWithCount(productWithCount.getId());
             String appendToCount = rb.getString("count-append");
             long priceForProduct = product.getPrice() * (long)productWithCount.getCount();
             totalSum += priceForProduct;
-            result.append("\n")
+            initial.append("\n")
                     .append(product.getName())
                     .append(" ➡ ")
                     .append(product.getPrice())
@@ -51,12 +50,12 @@ public class TextUtil {
                     .append(" ")
                     .append(rb.getString("uzs-text"));
         }
-        result.append("\n\n")
+        initial.append("\n\n")
                 .append(rb.getString("total"))
                 .append(": ==> ")
                 .append(totalSum)
                 .append(" ")
                 .append(rb.getString("uzs-text"));
-        return result.toString();
+        return initial;
     }
 }

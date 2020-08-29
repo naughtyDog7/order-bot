@@ -79,7 +79,7 @@ class OrderMainMessageState implements MessageState {
                 handleBasket(bot, telegramUser, rb, order);
                 return;
             } else if (text.equals(rb.getString("btn-order-main"))) {
-                handleOrder(bot, telegramUser, rb);
+                handleOrder(bot, telegramUser, rb, order);
                 return;
             } else if (text.equals(rb.getString("btn-cancel-order"))) {
                 handleCancel(bot, telegramUser, rb, order);
@@ -105,7 +105,7 @@ class OrderMainMessageState implements MessageState {
 
     /**
      * this map created to cache basket patterns for lang iso
-     * and dont waste time to create pattern each time String.mathces() called
+     * and dont waste time to create pattern each time String.matches() called
      */
     private static final Map<String, Pattern> BASKET_PATTERNS = new HashMap<>();
 
@@ -146,19 +146,28 @@ class OrderMainMessageState implements MessageState {
     }
 
 
-    private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+    private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        StringBuilder text = new StringBuilder(rb.getString("your-order")).append("\n");
+        List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
+        if (products.isEmpty())
+            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+        tu.appendProducts(text, products, rb);
+        SendMessage sendMessage1 = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(text.toString());
+        SendMessage sendMessage2 = new SendMessage()
                 .setChatId(telegramUser.getChatId());
         if (telegramUser.getPhoneNum() == null) {
-            sendMessage.setText(rb.getString("start-execute-order-no-phone") + "\n\n" + rb.getString("press-to-send-contact"));
-            setNewPhoneKeyboard(sendMessage, telegramUser.getLangISO());
+            sendMessage2.setText(rb.getString("start-execute-order-no-phone") + "\n\n" + rb.getString("press-to-send-contact"));
+            setNewPhoneKeyboard(sendMessage2, telegramUser.getLangISO());
         } else {
-            sendMessage.setText(rb.getString("start-execute-order-with-phone")
+            sendMessage2.setText(rb.getString("start-execute-order-with-phone")
                     .replace("{phoneNum}", telegramUser.getPhoneNum()));
-            setConfirmPhoneKeyboard(sendMessage, rb, telegramUser.getLangISO());
+            setConfirmPhoneKeyboard(sendMessage2, rb, telegramUser.getLangISO());
         }
         try {
-            bot.execute(sendMessage);
+            bot.execute(sendMessage1);
+            bot.execute(sendMessage2);
             telegramUser.setCurState(ORDER_PHONE_NUM);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {
@@ -189,7 +198,7 @@ class OrderMainMessageState implements MessageState {
             handleEmptyBasket(bot, telegramUser, rb);
             return;
         }
-        String text = tu.appendProducts(products, rb);
+        String text = tu.appendProducts(new StringBuilder(), products, rb).toString();
         SendMessage sendMessage = new SendMessage()
                 .setText(text)
                 .setChatId(telegramUser.getChatId());
