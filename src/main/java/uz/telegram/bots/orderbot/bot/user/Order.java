@@ -63,9 +63,6 @@ public class Order {
 
     public enum OrderState {
         ACTIVE,
-        ACCEPTED,
-        CANCELLED,
-        SENT,
-        DELIVERED
+        CANCELLED
     }
 }

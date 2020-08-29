@@ -2,10 +2,14 @@ package uz.telegram.bots.orderbot.bot.user;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.telegram.bots.orderbot.bot.dto.OrderDto;
 
 import javax.persistence.*;
 import java.util.Objects;
 import java.util.StringJoiner;
+
+import static uz.telegram.bots.orderbot.bot.dto.OrderDto.PaymentMethodDto.AFTER_DELIVERY;
+import static uz.telegram.bots.orderbot.bot.dto.OrderDto.PaymentMethodDto.ONLINE;
 
 @Entity
 @Data
@@ -48,18 +52,24 @@ public class PaymentInfo {
     }
 
     public enum PaymentMethod {
-        CASH("btn-cash"),
-        CLICK("btn-click"),
-        PAYME("btn-payme");
+        CASH("btn-cash", AFTER_DELIVERY),
+        CLICK("btn-click", ONLINE),
+        PAYME("btn-payme", ONLINE);
 
         private final String rbValue;
+        private final OrderDto.PaymentMethodDto paymentMethodDto;
 
-        PaymentMethod(String rbValue) {
+        PaymentMethod(String rbValue, OrderDto.PaymentMethodDto paymentMethodDto) {
             this.rbValue = rbValue;
+            this.paymentMethodDto = paymentMethodDto;
         }
 
         public String getRbValue() {
             return rbValue;
+        }
+
+        public OrderDto.PaymentMethodDto toDto() {
+            return paymentMethodDto;
         }
     }
 }

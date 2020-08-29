@@ -17,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "JOIN FETCH o.products " +
             "WHERE o.state = :state")
     List<Order> findAllByStateWithProducts(Order.OrderState state);
+
+    Optional<Order> getByOrderId(String orderId);
 }

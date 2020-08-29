@@ -20,15 +20,15 @@ public class OrderDto {
 
     @JsonProperty("amount_order")
     private double amountOrder;
-    private PaymentMethod paymentMethod;
+    private PaymentMethodDto paymentMethod;
 
-    public OrderDto(String address, String contact, String phone, OrderType orderType, int amountOrder, PaymentMethod paymentMethod) {
+    public OrderDto(String address, String contact, String phone, OrderType orderType, int amountOrder, PaymentMethodDto paymentMethodDto) {
         this.address = address;
         this.contact = contact;
         this.phone = phone;
         this.orderType = orderType;
         this.amountOrder = amountOrder;
-        this.paymentMethod = paymentMethod;
+        this.paymentMethod = paymentMethodDto;
     }
 
     public enum OrderType {
@@ -47,13 +47,13 @@ public class OrderDto {
         }
     }
 
-    public enum PaymentMethod {
+    public enum PaymentMethodDto {
         AFTER_DELIVERY(0),
         ONLINE(1);
 
         private final int intJsonValue;
 
-        PaymentMethod(int intJsonValue) {
+        PaymentMethodDto(int intJsonValue) {
             this.intJsonValue = intJsonValue;
         }
 

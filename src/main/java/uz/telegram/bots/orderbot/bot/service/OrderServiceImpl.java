@@ -13,11 +13,9 @@ import org.springframework.web.client.RestTemplate;
 import uz.telegram.bots.orderbot.bot.dto.CourseDto;
 import uz.telegram.bots.orderbot.bot.dto.OrderDto;
 import uz.telegram.bots.orderbot.bot.dto.OrderWrapper;
+import uz.telegram.bots.orderbot.bot.dto.WebhookOrderDto.WebhookOrderStatus;
 import uz.telegram.bots.orderbot.bot.properties.JowiProperties;
-import uz.telegram.bots.orderbot.bot.repository.OrderRepository;
-import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
-import uz.telegram.bots.orderbot.bot.repository.ProductWithCountRepository;
-import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
+import uz.telegram.bots.orderbot.bot.repository.*;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
@@ -27,7 +25,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static uz.telegram.bots.orderbot.bot.dto.OrderDto.OrderType.DELIVERY;
-import static uz.telegram.bots.orderbot.bot.dto.OrderDto.PaymentMethod.ONLINE;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -38,6 +35,8 @@ public class OrderServiceImpl implements OrderService {
     private final ProductService productService;
     private final RestaurantRepository restaurantRepository;
     private final ProductWithCountRepository productWithCountRepository;
+    private final PaymentInfoRepository paymentInfoRepository;
+    private final LocationRepository locationRepository;
     private final UriUtil uriUtil;
     private final RestTemplate restTemplate;
     private final JowiProperties jowiProperties;
@@ -46,12 +45,15 @@ public class OrderServiceImpl implements OrderService {
     public OrderServiceImpl(OrderRepository repository, ProductRepository productRepository,
                             ProductService productService, RestaurantRepository restaurantRepository,
                             ProductWithCountRepository productWithCountRepository,
+                            PaymentInfoRepository paymentInfoRepository, LocationRepository locationRepository,
                             UriUtil uriUtil, RestTemplate restTemplate, JowiProperties jowiProperties) {
         this.orderRepository = repository;
         this.productRepository = productRepository;
         this.productService = productService;
         this.restaurantRepository = restaurantRepository;
         this.productWithCountRepository = productWithCountRepository;
+        this.paymentInfoRepository = paymentInfoRepository;
+        this.locationRepository = locationRepository;
         this.uriUtil = uriUtil;
         this.restTemplate = restTemplate;
         this.jowiProperties = jowiProperties;
@@ -78,22 +80,28 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.delete(order);
     }
 
-
     @Override
     public void postOrder(Order order, TelegramUser user) throws IOException {
         List<ProductWithCount> products = productWithCountRepository.getWithProductsByOrderId(order.getId());
         Restaurant restaurant = restaurantRepository.getByOrderId(order.getId());
         OrderWrapper orderWrapper = new OrderWrapper(jowiProperties.getApiKey(), jowiProperties.getSig(), restaurant.getRestaurantId());
-        OrderDto orderDto = new OrderDto("addresssss", "MUZAPPAR",
-                "+somenumber", DELIVERY, 0, ONLINE);
+        PaymentInfo paymentInfo = paymentInfoRepository.getByOrderId(order.getId());
+        TelegramLocation location = locationRepository.getByPaymentInfoId(paymentInfo.getId());
+        OrderDto orderDto = new OrderDto(location.toString(), null,
+                user.getPhoneNum(), DELIVERY, 0, paymentInfo.getPaymentMethod().toDto());
         orderWrapper.setOrder(orderDto);
-        orderDto.setCourses(products.stream().map(CourseDto::fromProductWithCount).collect(Collectors.toList()));
-        orderDto.setAmountOrder(products.stream().map(ProductWithCount::getProduct).mapToInt(Product::getPrice).sum());
+        orderDto.setCourses(products.stream()
+                .map(CourseDto::fromProductWithCount)
+                .collect(Collectors.toList()));
+        long amountOrder = 0;
+        for (ProductWithCount product : products) {
+            amountOrder += product.getCount() * (long)product.getProduct().getPrice();
+        }
+        orderDto.setAmountOrder(amountOrder);
 
         RequestEntity<OrderWrapper> requestEntity = RequestEntity.post(uriUtil.getOrderPostUri())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(orderWrapper);
-
         try {
             System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(orderWrapper));
         } catch (JsonProcessingException e) {
@@ -106,5 +114,18 @@ public class OrderServiceImpl implements OrderService {
         if (context.read("$.status", Integer.class) != 1) {
             throw new IOException("Was waiting for status 1 in response, response = " + jsonResponse);
         }
+        String orderId = context.read("$.order.id", String.class);
+        order.setOrderId(orderId);
+        orderRepository.save(order);
+    }
+
+    @Override
+    public Optional<Order> getByOrderStringId(String orderId) {
+        return orderRepository.getByOrderId(orderId);
+    }
+
+    @Override
+    public void proceedOrderUpdate(Order order, WebhookOrderStatus newStatus) {
+
     }
 }

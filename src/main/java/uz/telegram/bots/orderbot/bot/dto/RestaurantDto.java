@@ -23,7 +23,7 @@ public class RestaurantDto {
     private double deliveryPrice;
 
     public static Restaurant toRestaurant(RestaurantDto restaurantDto) {
-        TelegramLocation location = TelegramLocation.of(restaurantDto.longitude, restaurantDto.latitude);
+        TelegramLocation location = TelegramLocation.of(restaurantDto.latitude, restaurantDto.longitude);
         Restaurant restaurant = new Restaurant(restaurantDto.id, restaurantDto.title, location);
         restaurant.setOnlineOrder(restaurantDto.onlineOrder);
         restaurant.setDeliveryPrice(restaurantDto.deliveryPrice);

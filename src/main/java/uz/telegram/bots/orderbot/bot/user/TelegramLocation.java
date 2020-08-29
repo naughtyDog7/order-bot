@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
+import java.util.StringJoiner;
 
 @Data
 @Entity
@@ -17,10 +18,17 @@ public class TelegramLocation {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    private final double longitude, latitude;
+    private final double latitude, longitude;
 
-    public static TelegramLocation of(double longitude, double latitude) {
-        return new TelegramLocation(longitude, latitude);
+    public static TelegramLocation of(double latitude, double longitude) {
+        return new TelegramLocation(latitude, longitude);
     }
 
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", "[", "]")
+                .add("latitude=" + latitude)
+                .add("longitude=" + longitude)
+                .toString();
+    }
 }

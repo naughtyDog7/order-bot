@@ -117,6 +117,7 @@ class PaymentMethodMessageState implements MessageState {
             bot.execute(sendMessage1);
             bot.execute(sendMessage2);
             telegramUser.setCurState(TelegramUser.UserState.FINAL_CONFIRMATION);
+            userService.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

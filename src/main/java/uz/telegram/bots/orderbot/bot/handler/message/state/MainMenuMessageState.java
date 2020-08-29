@@ -113,8 +113,6 @@ class MainMenuMessageState implements MessageState {
             Order order = new Order(telegramUser);
             PaymentInfo paymentInfo = new PaymentInfo();
             paymentInfo.setFromRestaurant(restaurant);
-            TelegramLocation location = TelegramLocation.of(42.2, 68.8);
-            paymentInfo.setOrderLocation(location);
             order.setPaymentInfo(paymentInfo);
             //test info
 

@@ -79,10 +79,11 @@ class LocationSendState implements MessageState {
     }
 
     private void handleLocation(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Location location) {
-        TelegramLocation tLocation = TelegramLocation.of(location.getLongitude(), location.getLatitude());
+        TelegramLocation tLocation = TelegramLocation.of(location.getLatitude(), location.getLongitude());
         PaymentInfo paymentInfo = paymentInfoService.getFromOrderId(order.getId());
         paymentInfo.setOrderLocation(tLocation);
         paymentInfoService.save(paymentInfo);
+
         StringBuilder curOrderText = new StringBuilder(rb.getString("your-order")).append("\n");
         List<ProductWithCount> products = pwcService.getAllFromOrderId(order.getId());
         tu.appendProducts(curOrderText, products, rb);

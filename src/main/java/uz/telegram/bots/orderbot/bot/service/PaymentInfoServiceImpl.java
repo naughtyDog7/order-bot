@@ -21,6 +21,6 @@ public class PaymentInfoServiceImpl implements PaymentInfoService {
 
     @Override
     public PaymentInfo getFromOrderId(long orderId) {
-        return paymentInfoRepository.getByOrderAndId(orderId);
+        return paymentInfoRepository.getByOrderId(orderId);
     }
 }

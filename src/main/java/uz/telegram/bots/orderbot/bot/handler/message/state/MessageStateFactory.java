@@ -65,6 +65,9 @@ public class MessageStateFactory {
             case PAYMENT_METHOD_CHOOSE:
                 ms = messageStatesMap.get(PaymentMethodMessageState.class);
                 break;
+            case FINAL_CONFIRMATION:
+                ms = messageStatesMap.get(FinalConfirmationMessageState.class);
+                break;
             default:
                 ms = null;
         }
