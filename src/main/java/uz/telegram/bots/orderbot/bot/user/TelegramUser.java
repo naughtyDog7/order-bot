@@ -86,7 +86,7 @@ public class TelegramUser {
         BASKET_MAIN,
         SETTINGS_PHONE_NUM,
         ORDER_PHONE_NUM,
-        LOCATION_SENDING
+        PAYMENT_METHOD_CHOOSE, FINAL_CONFIRMATION, LOCATION_SENDING
     }
 
     public enum Role {

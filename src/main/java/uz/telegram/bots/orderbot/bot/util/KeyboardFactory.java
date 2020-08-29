@@ -103,6 +103,24 @@ public class KeyboardFactory {
                 keyboardRow.add(keyboardButton);
                 return new ReplyKeyboardMarkup(List.of(keyboardRow));
             }
+        },
+        PAYMENT_METHOD_CHOOSE {
+            @Override
+            ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
+                KeyboardRow row = new KeyboardRow();
+                row.add(rb.getString("btn-cash"));
+                row.add(rb.getString("btn-click"));
+                row.add(rb.getString("btn-payme"));
+                return new ReplyKeyboardMarkup(List.of(row));
+            }
+        },
+        FINAL_CONFIRMATION_KEYBOARD {
+            @Override
+            ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
+                KeyboardRow row = new KeyboardRow();
+                row.add(rb.getString("btn-confirm"));
+                return new ReplyKeyboardMarkup(List.of(row));
+            }
         };
 
         abstract ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb);

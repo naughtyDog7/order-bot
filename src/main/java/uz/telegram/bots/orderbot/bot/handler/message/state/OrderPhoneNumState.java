@@ -67,7 +67,7 @@ class OrderPhoneNumState implements MessageState {
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (message.hasText()) {
                 String btnBack = rb.getString("btn-back");
-                String btnConfirm = rb.getString("btn-confirm-phone");
+                String btnConfirm = rb.getString("btn-confirm");
                 String btnChangeNum = rb.getString("btn-change-existing-phone-num");
                 String text = message.getText();
                 if (text.equals(btnBack))

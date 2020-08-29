@@ -62,6 +62,9 @@ public class MessageStateFactory {
             case LOCATION_SENDING:
                 ms = messageStatesMap.get(LocationSendState.class);
                 break;
+            case PAYMENT_METHOD_CHOOSE:
+                ms = messageStatesMap.get(PaymentMethodMessageState.class);
+                break;
             default:
                 ms = null;
         }

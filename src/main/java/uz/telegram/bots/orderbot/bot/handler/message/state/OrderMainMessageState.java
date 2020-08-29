@@ -149,8 +149,10 @@ class OrderMainMessageState implements MessageState {
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         StringBuilder text = new StringBuilder(rb.getString("your-order")).append("\n");
         List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
-        if (products.isEmpty())
+        if (products.isEmpty()) {
             DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            return;
+        }
         tu.appendProducts(text, products, rb);
         SendMessage sendMessage1 = new SendMessage()
                 .setChatId(telegramUser.getChatId())
@@ -184,7 +186,7 @@ class OrderMainMessageState implements MessageState {
 
     private void setConfirmPhoneKeyboard(SendMessage sendMessage, ResourceBundle rb, String langISO) {
         KeyboardRow keyboardButtons = new KeyboardRow();
-        keyboardButtons.add(rb.getString("btn-confirm-phone"));
+        keyboardButtons.add(rb.getString("btn-confirm"));
         keyboardButtons.add(rb.getString("btn-change-existing-phone-num"));
         List<KeyboardRow> rows = new ArrayList<>();
         rows.add(keyboardButtons);

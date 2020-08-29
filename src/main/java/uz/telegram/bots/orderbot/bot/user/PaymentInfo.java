@@ -21,6 +21,8 @@ public class PaymentInfo {
     @ManyToOne(fetch = FetchType.LAZY)
     private Restaurant fromRestaurant;
 
+    private PaymentMethod paymentMethod;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -43,5 +45,21 @@ public class PaymentInfo {
                 .add("orderLocation=" + orderLocation)
                 .add("fromRestaurant=" + fromRestaurant.getRestaurantTitle())
                 .toString();
+    }
+
+    public enum PaymentMethod {
+        CASH("btn-cash"),
+        CLICK("btn-click"),
+        PAYME("btn-payme");
+
+        private final String rbValue;
+
+        PaymentMethod(String rbValue) {
+            this.rbValue = rbValue;
+        }
+
+        public String getRbValue() {
+            return rbValue;
+        }
     }
 }

@@ -3,6 +3,7 @@ package uz.telegram.bots.orderbot.bot.util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uz.telegram.bots.orderbot.bot.service.ProductService;
+import uz.telegram.bots.orderbot.bot.user.PaymentInfo;
 import uz.telegram.bots.orderbot.bot.user.Product;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
 
@@ -57,5 +58,27 @@ public class TextUtil {
                 .append(" ")
                 .append(rb.getString("uzs-text"));
         return initial;
+    }
+
+    public StringBuilder appendPhoneNum(StringBuilder initial, String phoneNum, ResourceBundle rb) {
+        return initial
+                .append("\n\n")
+                .append(rb.getString("phone-number"))
+                .append(": ")
+                .append(phoneNum);
+    }
+
+    public StringBuilder appendNoNameLocation(StringBuilder initial, ResourceBundle rb) {
+        return initial.append("\n")
+                .append(rb.getString("location"))
+                .append(": ")
+                .append(rb.getString("chosen-location"));
+    }
+
+    public StringBuilder appendPaymentMethod(StringBuilder initial, PaymentInfo.PaymentMethod paymentMethod, ResourceBundle rb) {
+        return initial.append("\n")
+                .append(rb.getString("payment-method"))
+                .append(": ")
+                .append(rb.getString(paymentMethod.getRbValue()));
     }
 }
