@@ -10,29 +10,35 @@ import java.net.URI;
 
 @Component
 public class UriUtil {
-    private final JowiProperties jowiProperties;
-    private final UriComponents restaurantsTemplate;
+    private final URI restaurantsUri;
     private final UriComponents menuTemplate;
     private final URI orderPostUri;
+    private final UriComponents orderGetUri;
+    private final UriComponents orderCancelUri;
 
     @Autowired
     public UriUtil(JowiProperties jowiProperties) {
-        this.jowiProperties = jowiProperties;
-        restaurantsTemplate = UriComponentsBuilder.fromUriString(jowiProperties.getApiUrlV010())
+        restaurantsUri = UriComponentsBuilder.fromUriString(jowiProperties.getApiUrlV010())
                 .path("/restaurants")
                 .query("api_key=" + jowiProperties.getApiKey())
                 .query("sig=" + jowiProperties.getSig())
-                .build();
-        menuTemplate = UriComponentsBuilder.fromUri(restaurantsTemplate.toUri())
+                .build().toUri();
+        menuTemplate = UriComponentsBuilder.fromUri(restaurantsUri)
                 .path("/{restaurant-id}")
                 .build();
         orderPostUri = UriComponentsBuilder.fromUriString(jowiProperties.getApiUrlV3())
                 .path("/orders")
                 .build().toUri();
+        orderGetUri = UriComponentsBuilder.fromUriString(jowiProperties.getApiUrlV3())
+                .path("/orders/{order-id}")
+                .build();
+        orderCancelUri = UriComponentsBuilder.fromUriString(jowiProperties.getApiUrlV3())
+                .path("/orders/{order-id}/cancel")
+                .build();
     }
 
     public URI getRestaurantsGetUri() {
-        return restaurantsTemplate.toUri();
+        return restaurantsUri;
     }
 
     public URI getMenuGetUri(String restaurantId) {
@@ -41,5 +47,13 @@ public class UriUtil {
 
     public URI getOrderPostUri() {
         return orderPostUri;
+    }
+
+    public URI getOrderGetUri(String orderStringId) {
+        return orderGetUri.expand(orderStringId).toUri();
+    }
+
+    public URI getOrderCancelUri(String orderStringId) {
+        return orderCancelUri.expand(orderStringId).toUri();
     }
 }

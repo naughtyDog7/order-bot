@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +38,8 @@ public class TelegramUser {
     @OneToMany(mappedBy = "telegramUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<Order> orders = new ArrayList<>();
 
-
     private Role role = Role.USER;
+    private LocalDateTime lastActive;
 
     @Override
     public boolean equals(Object o) {
@@ -50,6 +52,12 @@ public class TelegramUser {
     @Override
     public int hashCode() {
         return Objects.hash(userId);
+    }
+
+    private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
+    @PrePersist
+    public void setLastActive() {
+        lastActive = LocalDateTime.now(tashkentZoneId);
     }
 
     @Override
@@ -86,7 +94,7 @@ public class TelegramUser {
         BASKET_MAIN,
         SETTINGS_PHONE_NUM,
         ORDER_PHONE_NUM,
-        PAYMENT_METHOD_CHOOSE, FINAL_CONFIRMATION, LOCATION_SENDING
+        PAYMENT_METHOD_CHOOSE, FINAL_CONFIRMATION, WAITING_ORDER_CONFIRM, LOCATION_SENDING
     }
 
     public enum Role {

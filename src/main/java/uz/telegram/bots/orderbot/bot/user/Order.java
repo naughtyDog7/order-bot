@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +33,7 @@ public class Order {
 
     private String chosenCategoryName = "";
     private String chosenProductStringId = "";
+    private LocalDateTime requestSendTime;
 
     @OneToOne(cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
     private PaymentInfo paymentInfo;

@@ -73,14 +73,15 @@ class SettingsPhoneNumState implements MessageState {
     }
 
     private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
-        SendMessage sendMessage1 = new SendMessage()
+        SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("phone-set-success"));
+        ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, true);
         telegramUser.setPhoneNum(phoneNum);
         userService.save(telegramUser);
 
         try {
-            bot.execute(sendMessage1);
+            bot.execute(sendMessage);
             telegramUser.setCurState(SETTINGS);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {

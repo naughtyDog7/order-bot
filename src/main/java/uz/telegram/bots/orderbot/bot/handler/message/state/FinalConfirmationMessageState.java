@@ -3,8 +3,11 @@ package uz.telegram.bots.orderbot.bot.handler.message.state;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.user.Order;
@@ -15,6 +18,8 @@ import uz.telegram.bots.orderbot.bot.util.LockFactory;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
@@ -66,7 +71,7 @@ class FinalConfirmationMessageState implements MessageState {
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (text.equals(btnBack)) {
                 handleBack(bot, telegramUser, rb, order);
-            } else if (text.equals(btnConfirm)){
+            } else if (text.equals(btnConfirm)) {
                 handleConfirm(bot, telegramUser, rb, order);
             } else {
                 DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
@@ -76,12 +81,33 @@ class FinalConfirmationMessageState implements MessageState {
         }
     }
 
+    private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
+
     private void handleConfirm(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         try {
             orderService.postOrder(order, telegramUser);
+            order.setRequestSendTime(LocalDateTime.now(tashkentZoneId));
+            orderService.save(order);
+
+            SendMessage sendMessage = new SendMessage()
+                    .setChatId(telegramUser.getChatId())
+                    .setText(rb.getString("order-was-sent-to-server"));
+            setCheckStatusKeyboard(sendMessage, telegramUser.getLangISO());
+            bot.execute(sendMessage);
+            telegramUser.setCurState(TelegramUser.UserState.WAITING_ORDER_CONFIRM);
+            userService.save(telegramUser);
         } catch (IOException e) {
             e.printStackTrace();
+            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
+    }
+
+    private void setCheckStatusKeyboard(SendMessage sendMessage, String langISO) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(KeyboardFactory.KeyboardType.CHECK_STATUS_KEYBOARD, langISO);
+        sendMessage.setReplyMarkup(keyboard
+                .setResizeKeyboard(true));
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {

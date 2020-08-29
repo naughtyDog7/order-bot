@@ -1,6 +1,5 @@
 package uz.telegram.bots.orderbot.bot.service;
 
-import uz.telegram.bots.orderbot.bot.dto.WebhookOrderDto;
 import uz.telegram.bots.orderbot.bot.user.Order;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 
@@ -14,6 +13,7 @@ public interface OrderService {
     void postOrder(Order order, TelegramUser user) throws IOException;
 
     Optional<Order> getByOrderStringId(String orderId);
+    int getOrderStatusValueFromServer(String orderStringId) throws IOException;
 
-    void proceedOrderUpdate(Order order, WebhookOrderDto.WebhookOrderStatus newStatus);
+    void cancelOrderOnServer(Order order, String cancellationReason) throws IOException;
 }

@@ -4,16 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import org.apache.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import uz.telegram.bots.orderbot.bot.dto.CancelOrderDto;
 import uz.telegram.bots.orderbot.bot.dto.CourseDto;
 import uz.telegram.bots.orderbot.bot.dto.OrderDto;
 import uz.telegram.bots.orderbot.bot.dto.OrderWrapper;
-import uz.telegram.bots.orderbot.bot.dto.WebhookOrderDto.WebhookOrderStatus;
 import uz.telegram.bots.orderbot.bot.properties.JowiProperties;
 import uz.telegram.bots.orderbot.bot.repository.*;
 import uz.telegram.bots.orderbot.bot.user.*;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static uz.telegram.bots.orderbot.bot.dto.OrderDto.OrderType.DELIVERY;
 
 @Service
@@ -95,12 +97,12 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList()));
         long amountOrder = 0;
         for (ProductWithCount product : products) {
-            amountOrder += product.getCount() * (long)product.getProduct().getPrice();
+            amountOrder += product.getCount() * (long) product.getProduct().getPrice();
         }
         orderDto.setAmountOrder(amountOrder);
 
         RequestEntity<OrderWrapper> requestEntity = RequestEntity.post(uriUtil.getOrderPostUri())
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(APPLICATION_JSON)
                 .body(orderWrapper);
         try {
             System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(orderWrapper));
@@ -125,7 +127,36 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void proceedOrderUpdate(Order order, WebhookOrderStatus newStatus) {
+    public int getOrderStatusValueFromServer(String orderStringId) throws IOException {
+        RequestEntity<Void> requestEntity = RequestEntity.get(uriUtil.getOrderGetUri(orderStringId))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+        ResponseEntity<String> jsonResponse = restTemplate.exchange(requestEntity, String.class);
+        String body = jsonResponse.getBody();
+        if (body == null)
+            throw new IOException("Server have not responded with order");
+
+        DocumentContext context = JsonPath.parse(body);
+        if (context.read("$.status", Integer.class) != 1)
+            throw new IOException("Received status other than 1, jsonResponse = " + jsonResponse);
+
+        Integer orderStatus = context.read("$.order.status", Integer.class);
+        if (orderStatus == null)
+            throw new IOException("Can't find order status, jsonResponse = " + jsonResponse);
+        return orderStatus;
+    }
+
+    @Override
+    public void cancelOrderOnServer(Order order, String cancellationReason) throws IOException {
+        CancelOrderDto cancel = new CancelOrderDto(jowiProperties.getApiKey(), jowiProperties.getSig(), cancellationReason);
+        RequestEntity<CancelOrderDto> requestEntity = RequestEntity.post(uriUtil.getOrderCancelUri(order.getOrderId()))
+                .contentType(APPLICATION_JSON)
+                .body(cancel);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
+        DocumentContext context = JsonPath.parse(responseEntity.getBody());
+        if (context.read("$.status", Integer.class) != 1) {
+            throw new IOException("Cancellation wasn't proceeded, received status other than 1, jsonResponse = " + responseEntity);
+        }
 
     }
 }

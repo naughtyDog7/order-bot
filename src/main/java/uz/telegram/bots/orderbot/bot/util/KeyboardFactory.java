@@ -121,6 +121,14 @@ public class KeyboardFactory {
                 row.add(rb.getString("btn-confirm"));
                 return new ReplyKeyboardMarkup(List.of(row));
             }
+        },
+        CHECK_STATUS_KEYBOARD {
+            @Override
+            ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
+                KeyboardRow row = new KeyboardRow();
+                row.add(rb.getString("btn-check-order-status"));
+                return new ReplyKeyboardMarkup(List.of(row));
+            }
         };
 
         abstract ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb);

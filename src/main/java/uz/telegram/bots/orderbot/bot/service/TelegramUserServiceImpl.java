@@ -49,4 +49,9 @@ public class TelegramUserServiceImpl implements TelegramUserService {
     public <S extends TelegramUser> S save(S s) {
         return repo.save(s);
     }
+
+    @Override
+    public TelegramUser getByOrderId(long id) {
+        return repo.getByOrderId(id);
+    }
 }

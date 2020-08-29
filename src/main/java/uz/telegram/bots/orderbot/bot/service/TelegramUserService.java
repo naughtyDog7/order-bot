@@ -12,4 +12,6 @@ public interface TelegramUserService {
     List<TelegramUser> getCommentReceivers();
     TelegramUser getOrSaveUser(Update update);
     <S extends TelegramUser> S save(S s);
+
+    TelegramUser getByOrderId(long id);
 }
