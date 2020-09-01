@@ -68,6 +68,12 @@ public class MessageStateFactory {
             case FINAL_CONFIRMATION:
                 ms = messageStatesMap.get(FinalConfirmationMessageState.class);
                 break;
+            case WAITING_ORDER_CONFIRM:
+                ms = messageStatesMap.get(WaitingOrderConfirmMessageState.class);
+                break;
+            case ONLINE_PAYMENT:
+                ms = messageStatesMap.get(OnlinePaymentMessageState.class);
+                break;
             default:
                 ms = null;
         }

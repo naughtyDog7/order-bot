@@ -107,35 +107,4 @@ class WaitingOrderConfirmMessageState implements MessageState {
             throw new UncheckedIOException(e);
         }
     }
-
-    /*
-//      0 	Новый заказ
-//      1 	Заказ принят в работу
-//      2 	Заказ отменен
-//      3 	Заказ отправлен клиенту
-//      4 	Заказ доставлен
-        try {
-            int status = orderService.getOrderStatusValueFromServer(order.getOrderId());
-            switch (status) {
-                case 0:
-                    handleNewCheck(bot, telegramUser, rb, order);
-                    break;
-                case 1:
-                    handleAcceptedCheck(bot, telegramUser, rb, order);
-                    break;
-                case 2:
-                    throw new AssertionError("Should not check cancelled ever, because after cancel check status should not be reached");
-                case 3:
-                    handleSentCheck(bot, telegramUser, rb, order);
-                    break;
-                case 4:
-                    throw new AssertionError("Should not check already delivered ever, because after deliver check status should not be reached");
-                default:
-                    throw new IOException("Waiting for statuses 0-4, received: " + status);
-            }
-        } catch (IOException e) {
-            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
-            throw new UncheckedIOException(e);
-        }
-*/
 }
