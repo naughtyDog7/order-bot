@@ -131,7 +131,7 @@ class ProductNumChooseState implements MessageState {
                 .rb(rb)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketNumItems);
+                .handleToOrderMain(basketNumItems, false);
     }
 
     private void handleNotEnough(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Product product) {

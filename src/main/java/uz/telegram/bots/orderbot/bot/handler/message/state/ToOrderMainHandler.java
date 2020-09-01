@@ -31,7 +31,7 @@ class ToOrderMainHandler {
     private final KeyboardUtil ku;
     private final List<Category> categories;
 
-    void handleToOrderMain(int basketNumItems) {
+    void handleToOrderMain(int basketNumItems, boolean fromMainMenu) {
         Objects.requireNonNull(bot);
         Objects.requireNonNull(telegramUser);
         Objects.requireNonNull(rb);
@@ -43,9 +43,10 @@ class ToOrderMainHandler {
         if (categories.isEmpty()) {
             handleEmptyCategories(basketNumItems);
         } else {
+            String text = rb.getString(fromMainMenu ? "order-message" : "order-message-2");
             SendMessage sendMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("order-message-2") + getRandMealEmoji());
+                    .setText(text + getRandMealEmoji());
             setKeyboard(sendMessage, basketNumItems);
 
             try {

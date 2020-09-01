@@ -130,7 +130,7 @@ class CategoryMainMessageState implements MessageState {
                 .ku(ku)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketNumItems);
+                .handleToOrderMain(basketNumItems, false);
 
     }
 

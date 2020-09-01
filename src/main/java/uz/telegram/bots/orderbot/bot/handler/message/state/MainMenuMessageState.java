@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.*;
-import static uz.telegram.bots.orderbot.bot.util.TextUtil.getRandMealEmoji;
+import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.CONTACT_US;
+import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
 
 @Component
 @Slf4j
@@ -107,6 +107,17 @@ class MainMenuMessageState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
+            if (orderService.getActive(telegramUser).isPresent()) {
+                SendMessage sendMessage = new SendMessage()
+                        .setChatId(telegramUser.getChatId())
+                        .setText(rb.getString("double-order-failure"));
+                try {
+                    bot.execute(sendMessage);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
 
             List<Restaurant> restaurants = restaurantService.updateAndFetchRestaurants();
             Restaurant restaurant = restaurants.get(1); //TODO change to finding closest restaurant impl
@@ -123,10 +134,6 @@ class MainMenuMessageState implements MessageState {
                     .setText(rb.getString("server-loading-message"));
             try {
                 Message message = bot.execute(loadingMessage);
-                SendMessage sendMessage = new SendMessage()
-                        .setChatId(telegramUser.getChatId())
-                        .setText(rb.getString("order-message") + getRandMealEmoji());
-
                 CompletableFuture<List<Category>> future = CompletableFuture.supplyAsync(() -> {
                     try {
                         return categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
@@ -137,16 +144,22 @@ class MainMenuMessageState implements MessageState {
                     }
                 });
                 List<Category> categories = future.get(5, TimeUnit.SECONDS);
-                setOrderKeyboard(sendMessage, telegramUser.getLangISO(), categories);
 
                 DeleteMessage deleteLoadingMessage = new DeleteMessage()
                         .setChatId(telegramUser.getChatId())
                         .setMessageId(message.getMessageId());
 
                 bot.execute(deleteLoadingMessage);
-                bot.execute(sendMessage);
-                telegramUser.setCurState(ORDER_MAIN);
-                userService.save(telegramUser);
+                ToOrderMainHandler.builder()
+                        .bot(bot)
+                        .telegramUser(telegramUser)
+                        .service(userService)
+                        .ku(ku)
+                        .kf(kf)
+                        .rb(rb)
+                        .categories(categories)
+                        .build()
+                        .handleToOrderMain(0, true);
             } catch (TelegramApiException | ExecutionException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
