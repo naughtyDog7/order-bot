@@ -52,17 +52,45 @@ class WaitingOrderConfirmMessageState implements MessageState {
             return;
         }
         String text = message.getText();
+        String btnCancelOrder = rb.getString("btn-cancel-order");
         String btnCheckStatus = rb.getString("btn-check-order-status");
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
+            Order order = orderService.getActive(telegramUser)
+                    .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (text.equals(btnCheckStatus)) {
-                Order order = orderService.getActive(telegramUser)
-                        .orElseThrow(() -> new AssertionError("Order must be present at this point"));
                 handleCheckStatus(bot, telegramUser, rb, order);
+            } else if (text.equals(btnCancelOrder)) {
+                handleCancelOrder(bot, telegramUser, rb, order);
+            } else {
+                DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void handleCancelOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        try {
+            orderService.cancelOrderOnServer(order, "Пользователь отменил заказ");
+            orderService.cancelOrder(order);
+            SendMessage sendMessage = new SendMessage()
+                    .setChatId(telegramUser.getChatId())
+                    .setText(rb.getString("order-was-cancelled-by-user"));
+            bot.execute(sendMessage);
+            ToMainMenuHandler.builder()
+                    .rb(rb)
+                    .telegramUser(telegramUser)
+                    .bot(bot)
+                    .service(userService)
+                    .kf(kf)
+                    .build()
+                    .handleToMainMenu();
+        } catch (IOException e) {
+            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
 

@@ -103,10 +103,10 @@ public class WebhookController {
                     handleCancelled(telegramUser, order, rb);
                     break;
                 case SENT:
-                    handleSent(telegramUser, order, rb);
+                    handleSent(telegramUser, rb);
                     break;
                 case DELIVERED:
-                    handleDelivered(telegramUser, order, rb);
+                    handleDelivered();
                     break;
             }
         } finally {
@@ -125,14 +125,14 @@ public class WebhookController {
             if (paymentMethod == CLICK || paymentMethod == PAYME) {
                 handleOnline(telegramUser, order, rb, paymentMethod);
             } else {
-                handleCash(telegramUser, order, rb);
+                handleCash(telegramUser, rb);
             }
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleCash(TelegramUser telegramUser, Order order, ResourceBundle rb) {
+    private void handleCash(TelegramUser telegramUser, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("after-success-order"));
@@ -186,17 +186,40 @@ public class WebhookController {
                         .orElseThrow(() -> new AssertionError("payment token not provided for method = " + paymentMethod)));
     }
 
-
-    private void handleDelivered(TelegramUser telegramUser, Order order, ResourceBundle rb) {
-
+    private void handleDelivered() {
+        log.info("order delivered");
     }
 
-    private void handleSent(TelegramUser telegramUser, Order order, ResourceBundle rb) {
-
+    private void handleSent(TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setText(rb.getString("your-order-is-sent"))
+                .setChatId(telegramUser.getChatId());
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleCancelled(TelegramUser telegramUser, Order order, ResourceBundle rb) {
-
+        log.info("Order cancelled");
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("order-was-cancelled"));
+        try {
+            bot.execute(sendMessage);
+            orderService.cancelOrder(order);
+            ToMainMenuHandler.builder()
+                    .telegramUser(telegramUser)
+                    .service(userService)
+                    .bot(bot)
+                    .kf(kf)
+                    .rb(rb)
+                    .build()
+                    .handleToMainMenu();
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 }
 

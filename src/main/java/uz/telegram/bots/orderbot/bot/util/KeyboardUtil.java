@@ -60,7 +60,10 @@ public class KeyboardUtil {
         KeyboardRow preLastRow = rows.get(rows.size() - 2);
         KeyboardRow lastRow = rows.get(rows.size() - 1);
 
-        preLastRow.addAll(lastRow);
+        KeyboardRow newPreLastRow = new KeyboardRow();
+        newPreLastRow.addAll(preLastRow);
+        newPreLastRow.addAll(lastRow);
+        rows.set(rows.size() - 2, newPreLastRow);
         rows.remove(lastRow);
         return new ReplyKeyboardMarkup(ImmutableList.copyOf(rows));
     }

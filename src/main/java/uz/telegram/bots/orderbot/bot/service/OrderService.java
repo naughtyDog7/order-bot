@@ -16,4 +16,5 @@ public interface OrderService {
     int getOrderStatusValueFromServer(String orderStringId) throws IOException;
 
     void cancelOrderOnServer(Order order, String cancellationReason) throws IOException;
+    void deleteOrder(Order order);
 }

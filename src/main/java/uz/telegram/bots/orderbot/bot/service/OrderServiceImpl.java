@@ -73,13 +73,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void cancelOrder(Order order) {
-        List<ProductWithCount> productsWithCount = productWithCountRepository.getAllByOrder(order);
-        for (ProductWithCount productWithCount : productsWithCount) {
-            Product product = productService.fromProductWithCount(productWithCount.getId());
-            product.setCountLeft(product.getCountLeft() + productWithCount.getCount());
-            productRepository.save(product);
-        }
-        orderRepository.delete(order);
+        deleteOrder(order);
     }
 
     @Override
@@ -157,6 +151,17 @@ public class OrderServiceImpl implements OrderService {
         if (context.read("$.status", Integer.class) != 1) {
             throw new IOException("Cancellation wasn't proceeded, received status other than 1, jsonResponse = " + responseEntity);
         }
+        deleteOrder(order);
+    }
 
+    @Override
+    public void deleteOrder(Order order) {
+        List<ProductWithCount> productsWithCount = productWithCountRepository.getAllByOrder(order);
+        for (ProductWithCount productWithCount : productsWithCount) {
+            Product product = productService.fromProductWithCount(productWithCount.getId());
+            product.setCountLeft(product.getCountLeft() + productWithCount.getCount());
+            productRepository.save(product);
+        }
+        orderRepository.delete(order);
     }
 }

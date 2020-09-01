@@ -127,6 +127,7 @@ public class KeyboardFactory {
             ReplyKeyboardMarkup getReplyKeyboard(ResourceBundle rb) {
                 KeyboardRow row = new KeyboardRow();
                 row.add(rb.getString("btn-check-order-status"));
+                row.add(rb.getString("btn-cancel-order"));
                 return new ReplyKeyboardMarkup(List.of(row));
             }
         };
