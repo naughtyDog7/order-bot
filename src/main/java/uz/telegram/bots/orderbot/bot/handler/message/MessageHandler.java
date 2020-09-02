@@ -35,6 +35,8 @@ public class MessageHandler implements Handler {
 
     @Override
     public void handle(Update update) {
+        if (update.getMessage().hasSuccessfulPayment())
+            return; //ignoring successful payment message
         TelegramUser telegramUser = service.getOrSaveUser(update);
         Lock lock = rlf.getLockForChatId(telegramUser.getChatId());
         try {
