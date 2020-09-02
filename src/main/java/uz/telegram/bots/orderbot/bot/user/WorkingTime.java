@@ -21,4 +21,8 @@ public class WorkingTime {
     private final boolean dayOff;
     private final LocalTime openTime;
     private final LocalTime closeTime;
+
+    public static boolean isWorkingAt(WorkingTime workingTime, LocalTime currentTime) {
+        return !workingTime.dayOff && currentTime.isAfter(workingTime.openTime) && currentTime.isBefore(workingTime.closeTime);
+    }
 }

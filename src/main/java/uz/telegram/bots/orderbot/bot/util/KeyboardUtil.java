@@ -10,6 +10,7 @@ import uz.telegram.bots.orderbot.bot.service.ProductService;
 import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.user.Product;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
+import uz.telegram.bots.orderbot.bot.user.Restaurant;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,5 +148,16 @@ public class KeyboardUtil {
         rows.set(0, firstRow);
         sendMessage.setReplyMarkup(addBackButtonLast(rows, langISO)
                 .setResizeKeyboard(true));
+    }
+
+    public void addRestaurantsToRows(List<KeyboardRow> rows, List<Restaurant> restaurants) {
+        for (int i = 0; i < restaurants.size(); i++) {
+            KeyboardRow keyboardButtons = new KeyboardRow();
+            keyboardButtons.add(restaurants.get(i).getRestaurantTitle());
+            if (i + 1 < restaurants.size()) {
+                keyboardButtons.add(restaurants.get(++i).getRestaurantTitle());
+            }
+            rows.add(keyboardButtons);
+        }
     }
 }

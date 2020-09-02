@@ -41,6 +41,9 @@ public class MessageStateFactory {
             case CONTACT_US:
                 ms = messageStatesMap.get(ContactUsMessageState.class);
                 break;
+            case RESTAURANT_CHOOSE:
+                ms = messageStatesMap.get(RestaurantChooseMessageState.class);
+                break;
             case ORDER_MAIN:
                 ms = messageStatesMap.get(OrderMainMessageState.class);
                 break;

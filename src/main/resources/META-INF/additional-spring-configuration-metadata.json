@@ -13,11 +13,16 @@
     {
       "name": "bot.username",
       "type": "java.lang.String",
-      "description": "Payme provider token that can be receiver from @BotFather."
+      "description": "Telegram bot username."
     },
     {
       "name": "payment.click-token",
       "type": "java.lang.String",
       "description": "Click provider token that can be receiver from @BotFather."
+    },
+    {
+      "name": "payment.payme-token",
+      "type": "java.lang.String",
+      "description": "Payme provider token that can be receiver from @BotFather."
     }
   ] }

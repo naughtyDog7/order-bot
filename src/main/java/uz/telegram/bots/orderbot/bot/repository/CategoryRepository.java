@@ -32,4 +32,9 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
             "WHERE o.id = :orderId AND " +
             "(SELECT count(p) FROM Product p WHERE p MEMBER OF c.products AND p.countLeft > 0) > 0")
     List<Category> findAllNonEmptyByOrderId(long orderId);
+
+    List<Category> findAllByRestaurantRestaurantId(String restaurantId);
+
+
+    Optional<Category> findByNameAndRestaurantRestaurantId(String name, String restaurantId);
 }

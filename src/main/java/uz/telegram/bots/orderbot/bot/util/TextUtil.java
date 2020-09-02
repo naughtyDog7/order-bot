@@ -3,10 +3,16 @@ package uz.telegram.bots.orderbot.bot.util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uz.telegram.bots.orderbot.bot.service.ProductService;
+import uz.telegram.bots.orderbot.bot.service.RestaurantService;
 import uz.telegram.bots.orderbot.bot.user.PaymentInfo;
 import uz.telegram.bots.orderbot.bot.user.Product;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
+import uz.telegram.bots.orderbot.bot.user.Restaurant;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ThreadLocalRandom;
@@ -19,10 +25,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class TextUtil {
 
     private final ProductService productService;
+    private final RestaurantService restaurantService;
 
     @Autowired
-    public TextUtil(ProductService productService) {
+    public TextUtil(ProductService productService, RestaurantService restaurantService) {
         this.productService = productService;
+        this.restaurantService = restaurantService;
     }
 
     public static final List<String> MEAL_EMOJIS = List.of("\uD83E\uDD57"/*🥗*/, "\uD83E\uDD58"/*🥘*/, "\uD83C\uDF5C"/*🍜*/,
@@ -60,25 +68,48 @@ public class TextUtil {
         return initial;
     }
 
-    public StringBuilder appendPhoneNum(StringBuilder initial, String phoneNum, ResourceBundle rb) {
-        return initial
+    public void appendPhoneNum(StringBuilder initial, String phoneNum, ResourceBundle rb) {
+        initial
                 .append("\n\n")
                 .append(rb.getString("phone-number"))
                 .append(": ")
                 .append(phoneNum);
     }
 
-    public StringBuilder appendNoNameLocation(StringBuilder initial, ResourceBundle rb) {
-        return initial.append("\n")
+    public void appendNoNameLocation(StringBuilder initial, ResourceBundle rb) {
+        initial.append("\n")
                 .append(rb.getString("location"))
                 .append(": ")
                 .append(rb.getString("chosen-location"));
     }
 
-    public StringBuilder appendPaymentMethod(StringBuilder initial, PaymentInfo.PaymentMethod paymentMethod, ResourceBundle rb) {
-        return initial.append("\n")
+    public void appendPaymentMethod(StringBuilder initial, PaymentInfo.PaymentMethod paymentMethod, ResourceBundle rb) {
+        initial.append("\n")
                 .append(rb.getString("payment-method"))
                 .append(": ")
                 .append(rb.getString(paymentMethod.getRbValue()));
+    }
+
+    private static final ZoneId TASHKENT_ZONE_ID = ZoneId.of("GMT+5");
+    public void appendRestaurants(StringBuilder text, List<Restaurant> restaurants, ResourceBundle rb) {
+        List<Restaurant> restaurantsCopy = new ArrayList<>(restaurants);
+        LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
+        restaurantsCopy.sort(((Comparator<Restaurant>)(f, s) ->
+                Boolean.compare(restaurantService.isOpened(curTime, f), restaurantService.isOpened(curTime, s))).reversed());
+        for (int i = 0; i < restaurantsCopy.size(); i++) {
+            Restaurant restaurant = restaurantsCopy.get(i);
+            text.append(i + 1).append(") ")
+                    .append(restaurant.getRestaurantTitle());
+            String address = restaurant.getAddress();
+            if (address != null) {
+                text.append("\n").append(rb.getString("address"))
+                        .append(": ")
+                        .append(address);
+            }
+            if (!restaurantService.isOpened(curTime, restaurant)) {
+                text.append("\n").append(rb.getString("restaurant-currently-closed"));
+            }
+            text.append("\n\n");
+        }
     }
 }

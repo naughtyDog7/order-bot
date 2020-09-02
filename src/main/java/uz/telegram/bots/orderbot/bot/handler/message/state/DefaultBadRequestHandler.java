@@ -40,4 +40,15 @@ public class DefaultBadRequestHandler {
             e.printStackTrace();
         }
     }
+
+    public static void handleRestaurantClosed(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setText(rb.getString("restaurant-currently-closed"))
+                .setChatId(telegramUser.getChatId());
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

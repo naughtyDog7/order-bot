@@ -15,14 +15,14 @@ import uz.telegram.bots.orderbot.bot.service.CategoryService;
 import uz.telegram.bots.orderbot.bot.service.OrderService;
 import uz.telegram.bots.orderbot.bot.service.RestaurantService;
 import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
-import uz.telegram.bots.orderbot.bot.user.*;
-import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
-import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
-import uz.telegram.bots.orderbot.bot.util.LockFactory;
-import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
+import uz.telegram.bots.orderbot.bot.user.Restaurant;
+import uz.telegram.bots.orderbot.bot.user.TelegramUser;
+import uz.telegram.bots.orderbot.bot.util.*;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -31,14 +31,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.CONTACT_US;
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
+import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.*;
 
 @Component
 @Slf4j
 class MainMenuMessageState implements MessageState {
 
+    private static final ZoneId TASHKENT_ZONE_ID = ZoneId.of("GMT+5");
     private final ResourceBundleFactory rbf;
     private final TelegramUserService userService;
     private final RestaurantService restaurantService;
@@ -47,11 +48,12 @@ class MainMenuMessageState implements MessageState {
     private final CategoryService categoryService;
     private final OrderService orderService;
     private final LockFactory lf;
+    private final TextUtil tu;
 
     @Autowired
     MainMenuMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                          RestaurantService restaurantService, KeyboardFactory kf, KeyboardUtil ku,
-                         CategoryService categoryService, OrderService orderService, LockFactory lf) {
+                         CategoryService categoryService, OrderService orderService, LockFactory lf, TextUtil tu) {
         this.rbf = rbf;
         this.userService = userService;
         this.restaurantService = restaurantService;
@@ -60,6 +62,7 @@ class MainMenuMessageState implements MessageState {
         this.categoryService = categoryService;
         this.orderService = orderService;
         this.lf = lf;
+        this.tu = tu;
     }
 
     @Override
@@ -119,47 +122,45 @@ class MainMenuMessageState implements MessageState {
                 return;
             }
 
-            List<Restaurant> restaurants = restaurantService.updateAndFetchRestaurants();
-            Restaurant restaurant = restaurants.get(1); //TODO change to finding closest restaurant impl
-            Order order = new Order(telegramUser);
-            PaymentInfo paymentInfo = new PaymentInfo();
-            paymentInfo.setFromRestaurant(restaurant);
-            order.setPaymentInfo(paymentInfo);
-            //test info
-
-            orderService.save(order);
-
             SendMessage loadingMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("server-loading-message"));
             try {
                 Message message = bot.execute(loadingMessage);
-                CompletableFuture<List<Category>> future = CompletableFuture.supplyAsync(() -> {
+                CompletableFuture<List<Restaurant>> future = CompletableFuture.supplyAsync(() -> {
                     try {
-                        return categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+                        return restaurantService.updateAndFetchRestaurants();
                         // TODO change id to chosen by user restaurant id
                     } catch (IOException e) {
                         JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
                         throw new UncheckedIOException(e);
                     }
                 });
-                List<Category> categories = future.get(5, TimeUnit.SECONDS);
-
+                LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
+                List<Restaurant> restaurants = future.get(5, TimeUnit.SECONDS);
+                List<Restaurant> workingRestaurants = restaurants
+                        .stream()
+                        .filter(r -> restaurantService.isOpened(curTime, r))
+                        .collect(Collectors.toList());
                 DeleteMessage deleteLoadingMessage = new DeleteMessage()
                         .setChatId(telegramUser.getChatId())
                         .setMessageId(message.getMessageId());
 
                 bot.execute(deleteLoadingMessage);
-                ToOrderMainHandler.builder()
-                        .bot(bot)
-                        .telegramUser(telegramUser)
-                        .service(userService)
-                        .ku(ku)
-                        .kf(kf)
-                        .rb(rb)
-                        .categories(categories)
-                        .build()
-                        .handleToOrderMain(0, true);
+
+                if (workingRestaurants.size() == 0) {
+                    handleNoWorkingRestaurants(bot, telegramUser, rb);
+                    return;
+                }
+                StringBuilder text = new StringBuilder(rb.getString("choose-restaurant")).append("\n\n");
+                tu.appendRestaurants(text, restaurants, rb);
+                SendMessage sendMessage = new SendMessage()
+                        .setChatId(telegramUser.getChatId())
+                        .setText(text.toString());
+                setRestaurantsKeyboard(sendMessage, workingRestaurants, telegramUser.getLangISO());
+                bot.execute(sendMessage);
+                telegramUser.setCurState(RESTAURANT_CHOOSE);
+                userService.save(telegramUser);
             } catch (TelegramApiException | ExecutionException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -169,32 +170,30 @@ class MainMenuMessageState implements MessageState {
                 JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
                 log.error("Jowi server timeout");
             }
-        } catch (IOException e) {
-            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
-            throw new UncheckedIOException(e);
         } finally {
             lock.unlock();
         }
     }
 
-    //this methods gets standard CATEGORIES_TEMPLATE_KEYBOARD and adds all categories in 2 rows between basket and cancel buttons
-    private void setOrderKeyboard(SendMessage sendMessage, String langISO, List<Category> categories) {
-        List<KeyboardRow> rows = new ArrayList<>(kf.getKeyboard(KeyboardFactory.KeyboardType.CATEGORIES_TEMPLATE_KEYBOARD, langISO)
-                .getKeyboard());
-        ku.addCategoriesToRows(rows, categories, 1);
+    private void handleNoWorkingRestaurants(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("no-working-restaurants-for-now"));
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 
-        String newBasketText = rows.get(0).get(0).getText().concat("(0)"); //setBasketItemsNum as zero
-        KeyboardRow newFirstRow = new KeyboardRow();
-        newFirstRow.add(newBasketText);
-        rows.set(0, newFirstRow);
-        //doing this to not change keyboard from kf
-
-        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(rows);
-        int size = rows.size();
-        if (size > 2 && rows.get(size - 2).size() <= 1 && rows.get(size - 1).size() <= 1)
+    private void setRestaurantsKeyboard(SendMessage sendMessage, List<Restaurant> restaurants, String langISO) {
+        List<KeyboardRow> rows = new ArrayList<>();
+        ku.addRestaurantsToRows(rows, restaurants);
+        ReplyKeyboardMarkup keyboard = ku.addBackButtonLast(rows, langISO);
+        if (restaurants.size() % 2 == 1) {
             keyboard = ku.concatLastTwoRows(keyboard);
-        sendMessage.setReplyMarkup(keyboard
-                .setResizeKeyboard(true));
+        }
+        sendMessage.setReplyMarkup(keyboard.setResizeKeyboard(true));
     }
 
     private void handleContactUs(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

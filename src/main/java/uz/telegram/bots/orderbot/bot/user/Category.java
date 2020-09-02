@@ -2,6 +2,7 @@ package uz.telegram.bots.orderbot.bot.user;
 
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -16,12 +17,13 @@ import java.util.stream.Collectors;
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Setter
     private int id;
 
     @Column(nullable = false)
     private final String name;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<Product> products = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)

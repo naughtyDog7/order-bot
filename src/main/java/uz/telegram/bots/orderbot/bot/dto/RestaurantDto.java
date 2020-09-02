@@ -29,6 +29,8 @@ public class RestaurantDto {
     @JsonProperty("delivery_price")
     private double deliveryPrice;
 
+    private String address;
+
     @JsonProperty("work_timetable")
     private List<DayDto> days;
 
@@ -38,7 +40,7 @@ public class RestaurantDto {
                 .collect(Collectors.toMap(d -> DayOfWeek.of(d.getDayCode()), DayDto::toWorkingTime,
                         (f, s) -> s, () -> new EnumMap<>(DayOfWeek.class)));
         TelegramLocation location = TelegramLocation.of(restaurantDto.latitude, restaurantDto.longitude);
-        Restaurant restaurant = new Restaurant(restaurantDto.id, restaurantDto.title, location, workingTimes);
+        Restaurant restaurant = new Restaurant(restaurantDto.id, restaurantDto.title, location, workingTimes, restaurantDto.getAddress());
         restaurant.setOnlineOrder(restaurantDto.onlineOrder);
         restaurant.setDeliveryPrice(restaurantDto.deliveryPrice);
         if (oldRestaurant != null) {

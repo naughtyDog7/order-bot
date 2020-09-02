@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.user.Order;
+import uz.telegram.bots.orderbot.bot.user.Restaurant;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
 import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
@@ -32,25 +33,25 @@ class FinalConfirmationMessageState implements MessageState {
     private final CategoryService categoryService;
     private final OrderService orderService;
     private final ProductWithCountService pwcService;
-    private final PaymentInfoService paymentInfoService;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final LockFactory lf;
+    private final RestaurantService restaurantService;
 
     @Autowired
     FinalConfirmationMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                   CategoryService categoryService, OrderService orderService,
-                                  ProductWithCountService pwcService, PaymentInfoService paymentInfoService,
-                                  KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
+                                  ProductWithCountService pwcService,
+                                  KeyboardFactory kf, KeyboardUtil ku, LockFactory lf, RestaurantService restaurantService) {
         this.rbf = rbf;
         this.userService = userService;
         this.categoryService = categoryService;
         this.orderService = orderService;
         this.pwcService = pwcService;
-        this.paymentInfoService = paymentInfoService;
         this.kf = kf;
         this.ku = ku;
         this.lf = lf;
+        this.restaurantService = restaurantService;
     }
 
     @Override
@@ -81,21 +82,36 @@ class FinalConfirmationMessageState implements MessageState {
         }
     }
 
-    private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
+    private static final ZoneId TASHKENT_ZONE_ID = ZoneId.of("GMT+5");
 
     private void handleConfirm(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         try {
-            orderService.postOrder(order, telegramUser);
-            order.setRequestSendTime(LocalDateTime.now(tashkentZoneId));
-            orderService.save(order);
+            Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+            LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
+            if (!restaurantService.isOpened(curTime, restaurant)) {
+                DefaultBadRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
+                orderService.cancelOrder(order);
+                ToMainMenuHandler.builder()
+                        .bot(bot)
+                        .kf(kf)
+                        .service(userService)
+                        .telegramUser(telegramUser)
+                        .rb(rb)
+                        .build()
+                        .handleToMainMenu();
+            } else {
+                orderService.postOrder(order, telegramUser);
+                order.setRequestSendTime(curTime);
+                orderService.save(order);
 
-            SendMessage sendMessage = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("order-was-sent-to-server"));
-            setCheckStatusKeyboard(sendMessage, telegramUser.getLangISO());
-            bot.execute(sendMessage);
-            telegramUser.setCurState(TelegramUser.UserState.WAITING_ORDER_CONFIRM);
-            userService.save(telegramUser);
+                SendMessage sendMessage = new SendMessage()
+                        .setChatId(telegramUser.getChatId())
+                        .setText(rb.getString("order-was-sent-to-server"));
+                setCheckStatusKeyboard(sendMessage, telegramUser.getLangISO());
+                bot.execute(sendMessage);
+                telegramUser.setCurState(TelegramUser.UserState.WAITING_ORDER_CONFIRM);
+                userService.save(telegramUser);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);

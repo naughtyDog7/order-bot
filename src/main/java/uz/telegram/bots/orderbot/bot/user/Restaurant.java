@@ -8,6 +8,8 @@ import javax.persistence.*;
 import java.time.DayOfWeek;
 import java.util.*;
 
+import static javax.persistence.FetchType.LAZY;
+
 @Data
 @Entity
 @RequiredArgsConstructor
@@ -19,20 +21,23 @@ public class Restaurant {
 
     @Column(unique = true, nullable = false)
     private final String restaurantId;
+    @Column(unique = true, nullable = false)
     private final String restaurantTitle;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = LAZY)
     private final TelegramLocation location;
 
     private boolean onlineOrder;
     private double deliveryPrice;
 
-    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = LAZY, orphanRemoval = true)
     private final List<Category> categories = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, fetch = LAZY)
     @MapKeyEnumerated
     private final Map<DayOfWeek, WorkingTime> workingTime;
+
+    private final String address;
 
     @Override
     public boolean equals(Object o) {
