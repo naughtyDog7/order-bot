@@ -87,6 +87,7 @@ public class TelegramUser {
         MAIN_MENU,
         SETTINGS,
         LANGUAGE_CONFIGURE,
+        RESTAURANT_CHOOSE,
         ORDER_MAIN,
         CONTACT_US,
         CATEGORY_MAIN,
@@ -94,7 +95,11 @@ public class TelegramUser {
         BASKET_MAIN,
         SETTINGS_PHONE_NUM,
         ORDER_PHONE_NUM,
-        PAYMENT_METHOD_CHOOSE, FINAL_CONFIRMATION, WAITING_ORDER_CONFIRM, ONLINE_PAYMENT, LOCATION_SENDING
+        PAYMENT_METHOD_CHOOSE,
+        FINAL_CONFIRMATION,
+        WAITING_ORDER_CONFIRM,
+        ONLINE_PAYMENT,
+        LOCATION_SENDING
     }
 
     public enum Role {

@@ -5,10 +5,8 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.time.DayOfWeek;
+import java.util.*;
 
 @Data
 @Entity
@@ -31,6 +29,10 @@ public class Restaurant {
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<Category> categories = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @MapKeyEnumerated
+    private final Map<DayOfWeek, WorkingTime> workingTime;
 
     @Override
     public boolean equals(Object o) {
