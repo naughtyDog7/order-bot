@@ -32,7 +32,7 @@ public class RestaurantDto {
     @JsonProperty("work_timetable")
     private List<DayDto> days;
 
-    public static Restaurant toRestaurant(RestaurantDto restaurantDto) {
+    public static Restaurant toRestaurant(RestaurantDto restaurantDto, Restaurant oldRestaurant) {
         Map<DayOfWeek, WorkingTime> workingTimes = restaurantDto.days.stream()
                 .filter(d -> d.getTimetableCode() == 1)
                 .collect(Collectors.toMap(d -> DayOfWeek.of(d.getDayCode()), DayDto::toWorkingTime,
@@ -41,6 +41,9 @@ public class RestaurantDto {
         Restaurant restaurant = new Restaurant(restaurantDto.id, restaurantDto.title, location, workingTimes);
         restaurant.setOnlineOrder(restaurantDto.onlineOrder);
         restaurant.setDeliveryPrice(restaurantDto.deliveryPrice);
+        if (oldRestaurant != null) {
+            restaurant.setId(oldRestaurant.getId());
+        }
         return restaurant;
     }
 }

@@ -68,7 +68,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
             List<Restaurant> restaurants = context.read("$.restaurants", RESTAURANTS_TYPE_REF)
                     .stream()
-                    .map(RestaurantDto::toRestaurant)
+                    .map(dto -> RestaurantDto.toRestaurant(dto, restaurantRepository.findByRestaurantId(dto.getId()).orElse(null)))
                     .collect(Collectors.toList());
 
             return restaurantRepository.saveAll(restaurants);

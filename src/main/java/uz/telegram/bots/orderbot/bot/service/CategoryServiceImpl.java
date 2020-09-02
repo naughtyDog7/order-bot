@@ -84,7 +84,8 @@ public class CategoryServiceImpl implements CategoryService {
 
             List<Category> categories = context.read("$.categories", CATEGORY_DTO_TYPE_REF)
                     .stream()
-                    .map(CategoryDto::toCategory)
+                    .map(dto -> CategoryDto.toCategory(dto,
+                            categoryRepository.findByNameAndRestaurantRestaurantId(dto.getTitle(), restaurantId).orElse(null)))
                     .collect(Collectors.toList());
             categories.forEach(category -> category.setRestaurant(restaurantRepository.findByRestaurantId(restaurantId)
                     .orElseThrow(() -> new AssertionError("Restaurant must be found at this point"))));
