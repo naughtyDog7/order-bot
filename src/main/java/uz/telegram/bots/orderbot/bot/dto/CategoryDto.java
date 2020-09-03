@@ -15,14 +15,15 @@ public class CategoryDto {
     private String title;
     private List<ProductDto> courses;
 
-    public static Category getNewOrUpdateOld(CategoryDto categoryDto, Category oldCategory, ProductRepository productRepository) {
+    public static Category getNewOrUpdateOld(CategoryDto categoryDto, Category oldCategory,
+                                             ProductRepository productRepository) {
         Category category;
         category = Objects.requireNonNullElseGet(oldCategory, Category::new);
 
         category.setName(categoryDto.getTitle());
         category.setProducts(categoryDto.getCourses()
                 .stream()
-                .map(p -> ProductDto.getNewOrUpdateOld(p, productRepository.getByProductId(p.getId()).orElse(null)))
+                .map(p -> ProductDto.getNewOrUpdateOld(p, productRepository.getByProductId(p.getId()).orElse(null), productRepository))
                 .peek(p -> p.setCategory(category))
                 .collect(Collectors.toList()));
         return category;
