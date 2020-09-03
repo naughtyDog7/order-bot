@@ -66,7 +66,7 @@ class LocationSendState implements MessageState {
                 if (text.equals(btnBack))
                     handleBack(bot, telegramUser, rb, order);
                 else
-                    DefaultBadRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
+                    DefaultBadRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
             } else if (message.hasLocation()) {
                 Location location = message.getLocation();
                 handleLocation(bot, telegramUser, rb, order, location);
