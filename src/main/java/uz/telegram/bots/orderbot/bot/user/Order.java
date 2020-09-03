@@ -32,8 +32,11 @@ public class Order {
 
     private double finalPrice;
 
-    private String chosenCategoryName = "";
-    private String chosenProductStringId = "";
+    @ManyToOne
+    private Category lastChosenCategory;
+    @ManyToOne
+    private Product lastChosenProduct;
+
     private LocalDateTime requestSendTime;
 
     @OneToOne(cascade = {CascadeType.REMOVE, CascadeType.PERSIST})

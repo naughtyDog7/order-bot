@@ -67,11 +67,11 @@ class ProductNumChooseState implements MessageState {
             lock.lock();
             Order order = orderService.getActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
-            Product product = productService.getByStringProductId(order.getChosenProductStringId())
+            Product product = productService.getLastChosenByOrder(order)
                     .orElseThrow(() -> new AssertionError("Product must be present at this point"));
             Restaurant restaurant = restaurantService.getByOrderId(order.getId());
             if (text.equals(btnBackText)) {
-                handleBack(bot, telegramUser, rb, order, restaurant);
+                handleBack(bot, telegramUser, rb, order);
                 return;
             }
 
@@ -100,7 +100,7 @@ class ProductNumChooseState implements MessageState {
         if (countLeft < 0)
             throw new AssertionError("Product should never be in negative count left");
         if (countLeft == 0) {
-            handleOutOfStock(bot, telegramUser, rb, order, restaurant);
+            handleOutOfStock(bot, telegramUser, rb, order);
             return;
         }
         if (numChosen > countLeft) {
@@ -148,7 +148,7 @@ class ProductNumChooseState implements MessageState {
         }
     }
 
-    private void handleOutOfStock(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Restaurant restaurant) {
+    private void handleOutOfStock(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("no-product-left"));
@@ -157,7 +157,7 @@ class ProductNumChooseState implements MessageState {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-        handleBack(bot, telegramUser, rb, order, restaurant);
+        handleBack(bot, telegramUser, rb, order);
     }
 
     private void handleIncorrectNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Restaurant restaurant, Product product, Order order) {
@@ -174,7 +174,7 @@ class ProductNumChooseState implements MessageState {
                 e.printStackTrace();
             }
         } else {
-            handleOutOfStock(bot, telegramUser, rb, order, restaurant);
+            handleOutOfStock(bot, telegramUser, rb, order);
         }
     }
 
@@ -182,8 +182,8 @@ class ProductNumChooseState implements MessageState {
         ku.setProductNumChoose(sendMessage, langISO, product);
     }
 
-    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Restaurant restaurant) {
-        Category category = categoryService.findByNameAndRestaurantId(order.getChosenCategoryName(), restaurant.getId())
+    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        Category category = categoryService.getLastChosenByOrder(order)
                 .orElseThrow(() -> new AssertionError("Category must be present at this point"));
         List<Product> products = productService.getAllByCategoryId(category.getId());
         ToCategoryMainHandler.builder()

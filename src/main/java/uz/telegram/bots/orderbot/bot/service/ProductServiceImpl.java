@@ -74,5 +74,10 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.saveAll(products);
     }
+
+    @Override
+    public Optional<Product> getLastChosenByOrder(Order order) {
+        return productRepository.getLastChosenByOrderId(order.getId());
+    }
 }
 

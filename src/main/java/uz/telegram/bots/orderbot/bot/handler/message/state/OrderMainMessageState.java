@@ -141,7 +141,7 @@ class OrderMainMessageState implements MessageState {
                 .build()
                 .handleToProducts();
 
-        order.setChosenCategoryName(category.getName());
+        order.setLastChosenCategory(category);
         orderService.save(order);
     }
 

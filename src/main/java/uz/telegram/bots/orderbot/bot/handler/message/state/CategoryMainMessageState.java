@@ -76,11 +76,7 @@ class CategoryMainMessageState implements MessageState {
                 int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
                 handleBack(bot, telegramUser, rb, categories, basketItemsNum);
             } else {
-                String chosenCategoryName = order.getChosenCategoryName();
-                if (chosenCategoryName.isEmpty())
-                    throw new IllegalStateException("Category title must not be empty, should be chosen after order main state");
-
-                Category category = categoryService.findByNameAndRestaurantId(chosenCategoryName, restaurant.getId())
+                Category category = categoryService.getLastChosenByOrder(order)
                         .orElseThrow(() -> new AssertionError("Category must be present at this point"));
 
                 Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
@@ -109,7 +105,7 @@ class CategoryMainMessageState implements MessageState {
             bot.execute(sendMessage2);
             telegramUser.setCurState(TelegramUser.UserState.PRODUCT_NUM_CHOOSE);
             service.save(telegramUser);
-            order.setChosenProductStringId(product.getProductId());
+            order.setLastChosenProduct(product);
             orderService.save(order);
         } catch (TelegramApiException e) {
             e.printStackTrace();

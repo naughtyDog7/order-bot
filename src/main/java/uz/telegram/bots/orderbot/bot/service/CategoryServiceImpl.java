@@ -15,6 +15,7 @@ import uz.telegram.bots.orderbot.bot.repository.CategoryRepository;
 import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
 import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.Category;
+import uz.telegram.bots.orderbot.bot.user.Order;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
 import java.io.IOException;
@@ -111,5 +112,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<Category> findNonEmptyByOrderId(long orderId) {
         return categoryRepository.findAllNonEmptyByOrderId(orderId);
+    }
+
+    @Override
+    public Optional<Category> getLastChosenByOrder(Order order) {
+        return categoryRepository.getLastChosenByOrderId(order.getId());
     }
 }
