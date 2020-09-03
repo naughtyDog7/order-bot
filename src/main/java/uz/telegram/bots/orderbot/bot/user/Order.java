@@ -26,7 +26,8 @@ public class Order {
     @JoinColumn(name = "telegram_user_id")
     private final TelegramUser telegramUser;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+            fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<ProductWithCount> products = new ArrayList<>();
 
     private double finalPrice;

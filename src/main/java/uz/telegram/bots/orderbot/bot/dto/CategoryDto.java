@@ -14,17 +14,19 @@ public class CategoryDto {
     private String title;
     private List<ProductDto> courses;
 
-    public static Category toCategory(CategoryDto categoryDto, Category oldCategory, ProductRepository productRepository) {
-        Category category = new Category(categoryDto.title);
-        category.addAllProducts(categoryDto.getCourses()
-                .stream()
-                .map(p -> ProductDto.toProduct(p, productRepository.getByProductId(p.getId()).orElse(null)))
-                .peek(p -> p.setCategory(category))
-                .collect(Collectors.toList()));
+    public static Category getNewOrUpdateOld(CategoryDto categoryDto, Category oldCategory, ProductRepository productRepository) {
+        Category category;
         if (oldCategory != null) {
-            category.setId(oldCategory.getId());
+            category = oldCategory;
+        } else {
+            category = new Category();
+            category.setProducts(categoryDto.getCourses()
+                    .stream()
+                    .map(p -> ProductDto.getNewOrUpdateOld(p, productRepository.getByProductId(p.getId()).orElse(null)))
+                    .peek(p -> p.setCategory(category))
+                    .collect(Collectors.toList()));
         }
+        category.setName(categoryDto.getTitle());
         return category;
-
     }
 }

@@ -2,7 +2,6 @@ package uz.telegram.bots.orderbot.bot.user;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import javax.persistence.*;
@@ -12,7 +11,6 @@ import java.util.stream.Collectors;
 
 @Entity
 @Data
-@RequiredArgsConstructor
 @NoArgsConstructor(force = true)
 public class Product {
     @Id
@@ -20,9 +18,9 @@ public class Product {
     private long id;
 
     @Column(unique = true, nullable = false)
-    private final String productId;
+    private String productId;
 
-    private final String name;
+    private String name;
 
     private int price;
 

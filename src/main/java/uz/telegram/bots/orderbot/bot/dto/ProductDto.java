@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import uz.telegram.bots.orderbot.bot.user.Product;
 
+import java.util.Objects;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Getter
 @Setter
@@ -23,12 +25,13 @@ public class ProductDto {
     @JsonProperty("count_left")
     private double countLeft;
 
-    public static Product toProduct(ProductDto productDto, Product oldProduct) {
-        Product product = new Product(productDto.id, productDto.title);
+    public static Product getNewOrUpdateOld(ProductDto productDto, Product oldProduct) {
+        Product product;
+        product = Objects.requireNonNullElseGet(oldProduct, Product::new);
+        product.setProductId(productDto.id);
+        product.setName(productDto.title);
         product.setCountLeft((int) Math.round(productDto.countLeft));
         product.setPrice((int) Math.round(productDto.price));
-        if (oldProduct != null)
-            product.setId(oldProduct.getId());
         return product;
     }
 }

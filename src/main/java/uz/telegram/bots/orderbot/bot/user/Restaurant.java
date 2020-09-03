@@ -2,7 +2,6 @@ package uz.telegram.bots.orderbot.bot.user;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -12,7 +11,6 @@ import static javax.persistence.FetchType.LAZY;
 
 @Data
 @Entity
-@RequiredArgsConstructor
 @NoArgsConstructor(force = true)
 public class Restaurant {
     @Id
@@ -20,24 +18,24 @@ public class Restaurant {
     private int id;
 
     @Column(unique = true, nullable = false)
-    private final String restaurantId;
+    private String restaurantId;
     @Column(unique = true, nullable = false)
-    private final String restaurantTitle;
+    private String restaurantTitle;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = LAZY)
-    private final TelegramLocation location;
+    @OneToOne(cascade = CascadeType.ALL, fetch = LAZY, orphanRemoval = true)
+    private TelegramLocation location;
 
     private boolean onlineOrder;
     private double deliveryPrice;
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = LAZY, orphanRemoval = true)
-    private final List<Category> categories = new ArrayList<>();
+    private List<Category> categories = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = LAZY)
+    @OneToMany(cascade = CascadeType.ALL, fetch = LAZY, orphanRemoval = true)
     @MapKeyEnumerated
-    private final Map<DayOfWeek, WorkingTime> workingTime;
+    private Map<DayOfWeek, WorkingTime> workingTime;
 
-    private final String address;
+    private String address;
 
     @Override
     public boolean equals(Object o) {

@@ -18,11 +18,7 @@ import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -86,11 +82,12 @@ public class CategoryServiceImpl implements CategoryService {
             if (context.read("$.status", Integer.class) != 1)
                 throw new IOException("Was waiting for status 1 in response, response = " + jsonResponse);
 
-            List<Category> categories = context.read("$.categories", CATEGORY_DTO_TYPE_REF)
-                    .stream()
-                    .map(dto -> CategoryDto.toCategory(dto,
-                            categoryRepository.findByNameAndRestaurantRestaurantId(dto.getTitle(), restaurantId).orElse(null), productRepository))
-                    .collect(Collectors.toList());
+            List<Category> categories = new ArrayList<>();
+            for (CategoryDto dto : context.read("$.categories", CATEGORY_DTO_TYPE_REF)) {
+                Category oldCategory = categoryRepository.findByNameAndRestaurantRestaurantId(dto.getTitle(), restaurantId).orElse(null);
+                Category category = CategoryDto.getNewOrUpdateOld(dto, oldCategory, productRepository);
+                categories.add(category);
+            }
             categories.forEach(category -> category.setRestaurant(restaurantRepository.findByRestaurantId(restaurantId)
                     .orElseThrow(() -> new AssertionError("Restaurant must be found at this point"))));
 

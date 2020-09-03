@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import uz.telegram.bots.orderbot.bot.dto.RestaurantDto;
+import uz.telegram.bots.orderbot.bot.repository.LocationRepository;
 import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.repository.WorkingTimeRepository;
 import uz.telegram.bots.orderbot.bot.user.Restaurant;
@@ -20,10 +21,10 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -34,15 +35,17 @@ public class RestaurantServiceImpl implements RestaurantService {
     private final RestTemplate restTemplate;
     private final UriUtil uriUtil;
     private final WorkingTimeRepository workingTimeRepository;
+    private final LocationRepository locationRepository;
 
 
     @Autowired
     public RestaurantServiceImpl(RestaurantRepository restaurantRepository, RestTemplate restTemplate,
-                                 UriUtil uriUtil, WorkingTimeRepository workingTimeRepository) {
+                                 UriUtil uriUtil, WorkingTimeRepository workingTimeRepository, LocationRepository locationRepository) {
         this.restaurantRepository = restaurantRepository;
         this.restTemplate = restTemplate;
         this.uriUtil = uriUtil;
         this.workingTimeRepository = workingTimeRepository;
+        this.locationRepository = locationRepository;
     }
 
     /**
@@ -75,10 +78,12 @@ public class RestaurantServiceImpl implements RestaurantService {
             if (context.read("$.status", Integer.class) != 1)
                 throw new IOException("Was waiting for status 1 in response, response = " + jsonResponse);
 
-            List<Restaurant> restaurants = context.read("$.restaurants", RESTAURANTS_TYPE_REF)
-                    .stream()
-                    .map(dto -> RestaurantDto.toRestaurant(dto, restaurantRepository.findByRestaurantId(dto.getId()).orElse(null)))
-                    .collect(Collectors.toList());
+            List<Restaurant> restaurants = new ArrayList<>();
+            for (RestaurantDto dto : context.read("$.restaurants", RESTAURANTS_TYPE_REF)) {
+                Restaurant oldRestaurant = restaurantRepository.findByRestaurantId(dto.getId()).orElse(null);
+                Restaurant restaurant = RestaurantDto.getNewOrUpdateOld(dto, oldRestaurant);
+                restaurants.add(restaurant);
+            }
 
             return restaurantRepository.saveAll(restaurants);
         } else {
