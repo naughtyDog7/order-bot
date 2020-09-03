@@ -12,6 +12,14 @@ jowi:
 payment:
   click-token: ${CLICK_PROVIDER_TOKEN}
   payme-token: ${PAYME_PROVIDER_TOKEN}
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 ---
 spring:
   profiles: dev
