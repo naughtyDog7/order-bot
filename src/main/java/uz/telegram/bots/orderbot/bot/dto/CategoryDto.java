@@ -6,6 +6,7 @@ import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
 import uz.telegram.bots.orderbot.bot.user.Category;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
@@ -16,17 +17,14 @@ public class CategoryDto {
 
     public static Category getNewOrUpdateOld(CategoryDto categoryDto, Category oldCategory, ProductRepository productRepository) {
         Category category;
-        if (oldCategory != null) {
-            category = oldCategory;
-        } else {
-            category = new Category();
-            category.setProducts(categoryDto.getCourses()
-                    .stream()
-                    .map(p -> ProductDto.getNewOrUpdateOld(p, productRepository.getByProductId(p.getId()).orElse(null)))
-                    .peek(p -> p.setCategory(category))
-                    .collect(Collectors.toList()));
-        }
+        category = Objects.requireNonNullElseGet(oldCategory, Category::new);
+
         category.setName(categoryDto.getTitle());
+        category.setProducts(categoryDto.getCourses()
+                .stream()
+                .map(p -> ProductDto.getNewOrUpdateOld(p, productRepository.getByProductId(p.getId()).orElse(null)))
+                .peek(p -> p.setCategory(category))
+                .collect(Collectors.toList()));
         return category;
     }
 }

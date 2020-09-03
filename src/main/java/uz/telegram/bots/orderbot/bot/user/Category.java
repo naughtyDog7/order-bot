@@ -22,7 +22,8 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "category", cascade = {CascadeType.MERGE, CascadeType.REMOVE},
+            fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Product> products = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
