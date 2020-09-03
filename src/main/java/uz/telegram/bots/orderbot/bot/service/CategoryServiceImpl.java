@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import uz.telegram.bots.orderbot.bot.dto.CategoryDto;
 import uz.telegram.bots.orderbot.bot.repository.CategoryRepository;
+import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
 import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
@@ -32,15 +33,18 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final RestaurantRepository restaurantRepository;
     private final ProductService productService;
+    private final ProductRepository productRepository;
     private final RestTemplate restTemplate;
     private final UriUtil uriUtil;
 
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository, RestaurantRepository restaurantRepository,
-                               ProductService productService, RestTemplate restTemplate, UriUtil uriUtil) {
+                               ProductService productService, ProductRepository productRepository,
+                               RestTemplate restTemplate, UriUtil uriUtil) {
         this.categoryRepository = categoryRepository;
         this.restaurantRepository = restaurantRepository;
         this.productService = productService;
+        this.productRepository = productRepository;
         this.restTemplate = restTemplate;
         this.uriUtil = uriUtil;
     }
@@ -85,7 +89,7 @@ public class CategoryServiceImpl implements CategoryService {
             List<Category> categories = context.read("$.categories", CATEGORY_DTO_TYPE_REF)
                     .stream()
                     .map(dto -> CategoryDto.toCategory(dto,
-                            categoryRepository.findByNameAndRestaurantRestaurantId(dto.getTitle(), restaurantId).orElse(null)))
+                            categoryRepository.findByNameAndRestaurantRestaurantId(dto.getTitle(), restaurantId).orElse(null), productRepository))
                     .collect(Collectors.toList());
             categories.forEach(category -> category.setRestaurant(restaurantRepository.findByRestaurantId(restaurantId)
                     .orElseThrow(() -> new AssertionError("Restaurant must be found at this point"))));

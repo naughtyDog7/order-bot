@@ -23,10 +23,12 @@ public class ProductDto {
     @JsonProperty("count_left")
     private double countLeft;
 
-    public static Product toProduct(ProductDto productDto) {
+    public static Product toProduct(ProductDto productDto, Product oldProduct) {
         Product product = new Product(productDto.id, productDto.title);
         product.setCountLeft((int) Math.round(productDto.countLeft));
         product.setPrice((int) Math.round(productDto.price));
+        if (oldProduct != null)
+            product.setId(oldProduct.getId());
         return product;
     }
 }
