@@ -1,0 +1,1 @@
+web: java $JAVA_OPTS -jar target/order-bot-0.0.1-SNAPSHOT.jar --bot.username="JizBizRobot"
