@@ -33,6 +33,7 @@ class FinalConfirmationMessageState implements MessageState {
     private final CategoryService categoryService;
     private final OrderService orderService;
     private final ProductWithCountService pwcService;
+    private final JowiService jowiService;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final LockFactory lf;
@@ -42,12 +43,13 @@ class FinalConfirmationMessageState implements MessageState {
     FinalConfirmationMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                   CategoryService categoryService, OrderService orderService,
                                   ProductWithCountService pwcService,
-                                  KeyboardFactory kf, KeyboardUtil ku, LockFactory lf, RestaurantService restaurantService) {
+                                  JowiService jowiService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf, RestaurantService restaurantService) {
         this.rbf = rbf;
         this.userService = userService;
         this.categoryService = categoryService;
         this.orderService = orderService;
         this.pwcService = pwcService;
+        this.jowiService = jowiService;
         this.kf = kf;
         this.ku = ku;
         this.lf = lf;
@@ -90,7 +92,7 @@ class FinalConfirmationMessageState implements MessageState {
             LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
             if (!restaurantService.isOpened(curTime, restaurant)) {
                 DefaultBadRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
-                orderService.cancelOrder(order);
+                orderService.deleteOrder(order);
                 ToMainMenuHandler.builder()
                         .bot(bot)
                         .kf(kf)
@@ -100,7 +102,7 @@ class FinalConfirmationMessageState implements MessageState {
                         .build()
                         .handleToMainMenu();
             } else {
-                orderService.postOrder(order, telegramUser);
+                jowiService.postOrder(order, telegramUser);
                 order.setRequestSendTime(curTime);
                 orderService.save(order);
 

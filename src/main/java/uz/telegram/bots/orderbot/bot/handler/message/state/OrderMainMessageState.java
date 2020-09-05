@@ -35,6 +35,7 @@ class OrderMainMessageState implements MessageState {
     private final OrderService orderService;
     private final RestaurantService restaurantService;
     private final ProductService productService;
+    private final JowiService jowiService;
     private final ProductWithCountService productWithCountService;
     private final LockFactory lf;
     private final TextUtil tu;
@@ -43,7 +44,7 @@ class OrderMainMessageState implements MessageState {
     OrderMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                           KeyboardFactory kf, KeyboardUtil ku, CategoryService categoryService,
                           OrderService orderService, RestaurantService restaurantService,
-                          ProductService productService, ProductWithCountService productWithCountService,
+                          ProductService productService, JowiService jowiService, ProductWithCountService productWithCountService,
                           LockFactory lf, TextUtil tu) {
         this.rbf = rbf;
         this.userService = userService;
@@ -53,6 +54,7 @@ class OrderMainMessageState implements MessageState {
         this.orderService = orderService;
         this.restaurantService = restaurantService;
         this.productService = productService;
+        this.jowiService = jowiService;
         this.productWithCountService = productWithCountService;
         this.lf = lf;
         this.tu = tu;
@@ -87,8 +89,21 @@ class OrderMainMessageState implements MessageState {
             }
 
             Restaurant restaurant = restaurantService.getByOrderId(order.getId());
-
-            List<Category> categories = categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+            List<Category> categories = jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+            if (categories.isEmpty()) { // it can be empty if someone modified on server
+                int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
+                ToOrderMainHandler.builder()
+                        .service(userService)
+                        .bot(bot)
+                        .telegramUser(telegramUser)
+                        .rb(rb)
+                        .ku(ku)
+                        .kf(kf)
+                        .categories(categories)
+                        .build()
+                        .handleToOrderMain(basketItemsNum, false);
+                return;
+            }
             int index = Category.getNames(categories).indexOf(text);
             if (index != -1)
                 handleCategory(bot, telegramUser, rb,
@@ -114,7 +129,7 @@ class OrderMainMessageState implements MessageState {
     }
 
     private void handleCancel(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        orderService.cancelOrder(order);
+        orderService.deleteOrder(order);
         ToMainMenuHandler.builder()
                 .bot(bot)
                 .kf(kf)
@@ -141,7 +156,7 @@ class OrderMainMessageState implements MessageState {
                 .build()
                 .handleToProducts();
 
-        order.setLastChosenCategory(category);
+        order.setLastChosenCategoryName(category.getName());
         orderService.save(order);
     }
 

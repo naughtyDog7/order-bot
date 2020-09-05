@@ -1,6 +1,5 @@
 package uz.telegram.bots.orderbot.bot.user;
 
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
@@ -11,7 +10,6 @@ import javax.persistence.Id;
 import java.time.LocalTime;
 
 @Entity
-@Data
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
 public class WorkingTime {
@@ -24,5 +22,25 @@ public class WorkingTime {
 
     public static boolean isWorkingAt(WorkingTime workingTime, LocalTime currentTime) {
         return !workingTime.dayOff && currentTime.isAfter(workingTime.openTime) && currentTime.isBefore(workingTime.closeTime);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public boolean isDayOff() {
+        return dayOff;
+    }
+
+    public LocalTime getOpenTime() {
+        return openTime;
+    }
+
+    public LocalTime getCloseTime() {
+        return closeTime;
     }
 }

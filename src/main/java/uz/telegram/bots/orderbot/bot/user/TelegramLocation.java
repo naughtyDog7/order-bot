@@ -1,17 +1,20 @@
 package uz.telegram.bots.orderbot.bot.user;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.Objects;
 import java.util.StringJoiner;
 
-@Data
 @Entity
 @Table(name = "location")
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
+@Getter
+@Setter
 public class TelegramLocation {
 
     @Id
@@ -22,6 +25,20 @@ public class TelegramLocation {
 
     public static TelegramLocation of(double latitude, double longitude) {
         return new TelegramLocation(latitude, longitude);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TelegramLocation that = (TelegramLocation) o;
+        return Double.compare(that.latitude, latitude) == 0 &&
+                Double.compare(that.longitude, longitude) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(latitude, longitude);
     }
 
     @Override

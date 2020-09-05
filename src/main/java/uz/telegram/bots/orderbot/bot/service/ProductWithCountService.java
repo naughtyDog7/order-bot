@@ -17,4 +17,6 @@ public interface ProductWithCountService {
     Optional<ProductWithCount> getByOrderIdAndProductName(long orderId, String productName);
 
     void deleteById(Long aLong);
+
+    List<ProductWithCount> getWithProductsByOrderId(long id);
 }

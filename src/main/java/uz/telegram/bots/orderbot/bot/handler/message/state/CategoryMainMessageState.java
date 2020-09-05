@@ -78,7 +78,6 @@ class CategoryMainMessageState implements MessageState {
             } else {
                 Category category = categoryService.getLastChosenByOrder(order)
                         .orElseThrow(() -> new AssertionError("Category must be present at this point"));
-
                 Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
 
                 optProduct.ifPresentOrElse(product -> handleProduct(bot, telegramUser, rb, product, order),
@@ -105,7 +104,7 @@ class CategoryMainMessageState implements MessageState {
             bot.execute(sendMessage2);
             telegramUser.setCurState(TelegramUser.UserState.PRODUCT_NUM_CHOOSE);
             service.save(telegramUser);
-            order.setLastChosenProduct(product);
+            order.setLastChosenProductStringId(product.getProductId());
             orderService.save(order);
         } catch (TelegramApiException e) {
             e.printStackTrace();

@@ -1,7 +1,8 @@
 package uz.telegram.bots.orderbot.bot.user;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
@@ -10,8 +11,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Entity
-@Data
 @NoArgsConstructor(force = true)
+@Getter
+@Setter
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -28,20 +30,20 @@ public class Product {
     @ToString.Exclude
     private Category category;
 
-    private volatile int countLeft;
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Product product = (Product) o;
-        return id == product.id;
+        return Objects.equals(productId, product.productId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(productId);
     }
+
+    private volatile int countLeft;
 
     public static List<String> productNames(List<? extends Product> products) {
         return products.stream().map(Product::getName).collect(Collectors.toList());

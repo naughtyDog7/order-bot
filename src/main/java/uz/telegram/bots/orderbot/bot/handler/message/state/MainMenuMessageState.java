@@ -11,10 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import uz.telegram.bots.orderbot.bot.service.CategoryService;
-import uz.telegram.bots.orderbot.bot.service.OrderService;
-import uz.telegram.bots.orderbot.bot.service.RestaurantService;
-import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
+import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.Restaurant;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 import uz.telegram.bots.orderbot.bot.util.*;
@@ -45,7 +42,7 @@ class MainMenuMessageState implements MessageState {
     private final RestaurantService restaurantService;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
-    private final CategoryService categoryService;
+    private final JowiService jowiService;
     private final OrderService orderService;
     private final LockFactory lf;
     private final TextUtil tu;
@@ -53,13 +50,13 @@ class MainMenuMessageState implements MessageState {
     @Autowired
     MainMenuMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                          RestaurantService restaurantService, KeyboardFactory kf, KeyboardUtil ku,
-                         CategoryService categoryService, OrderService orderService, LockFactory lf, TextUtil tu) {
+                         JowiService jowiService, OrderService orderService, LockFactory lf, TextUtil tu) {
         this.rbf = rbf;
         this.userService = userService;
         this.restaurantService = restaurantService;
         this.kf = kf;
         this.ku = ku;
-        this.categoryService = categoryService;
+        this.jowiService = jowiService;
         this.orderService = orderService;
         this.lf = lf;
         this.tu = tu;
@@ -129,7 +126,7 @@ class MainMenuMessageState implements MessageState {
                 Message message = bot.execute(loadingMessage);
                 CompletableFuture<List<Restaurant>> future = CompletableFuture.supplyAsync(() -> {
                     try {
-                        return restaurantService.updateAndFetchRestaurants();
+                        return jowiService.updateAndFetchRestaurants();
                         // TODO change id to chosen by user restaurant id
                     } catch (IOException e) {
                         JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);

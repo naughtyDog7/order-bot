@@ -39,7 +39,16 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     Optional<Category> findByNameAndRestaurantRestaurantId(String name, String restaurantId);
 
     @Query(value = "SELECT c FROM Order o " +
-            "JOIN o.lastChosenCategory c " +
-            "WHERE o.id = :id")
+            "JOIN o.paymentInfo pi " +
+            "JOIN pi.fromRestaurant r " +
+            "JOIN r.categories c " +
+            "WHERE o.id = :id AND c.name = o.lastChosenCategoryName")
     Optional<Category> getLastChosenByOrderId(long id);
+
+    @Query("SELECT c FROM Category c " +
+            "JOIN FETCH c.products p " +
+            "WHERE c.id = :id")
+    Optional<Category> getWithProductsById(int id);
+
+    List<Category> deleteAllByRestaurantRestaurantId(String restaurantId);
 }

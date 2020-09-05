@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import uz.telegram.bots.orderbot.bot.service.JowiService;
 import uz.telegram.bots.orderbot.bot.service.OrderService;
 import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
 import uz.telegram.bots.orderbot.bot.user.Order;
@@ -32,15 +33,17 @@ class WaitingOrderConfirmMessageState implements MessageState {
     private final OrderService orderService;
     private final KeyboardFactory kf;
     private final LockFactory lf;
+    private final JowiService jowiService;
 
     @Autowired
     WaitingOrderConfirmMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
-                                    OrderService orderService, KeyboardFactory kf, LockFactory lf) {
+                                    OrderService orderService, KeyboardFactory kf, LockFactory lf, JowiService jowiService) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
         this.kf = kf;
         this.lf = lf;
+        this.jowiService = jowiService;
     }
 
     @Override
@@ -73,8 +76,8 @@ class WaitingOrderConfirmMessageState implements MessageState {
 
     private void handleCancelOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         try {
-            orderService.cancelOrderOnServer(order, "Пользователь отменил заказ");
-            orderService.cancelOrder(order);
+            jowiService.cancelOrderOnServer(order, "Пользователь отменил заказ");
+            orderService.deleteOrder(order);
             SendMessage sendMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("order-was-cancelled-by-user"));
@@ -114,8 +117,8 @@ class WaitingOrderConfirmMessageState implements MessageState {
 
     private void handleTimeIsUp(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         try {
-            orderService.cancelOrderOnServer(order, "Достигнут максимум ожидания");
-            orderService.cancelOrder(order);
+            jowiService.cancelOrderOnServer(order, "Достигнут максимум ожидания");
+            orderService.deleteOrder(order);
             SendMessage sendMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("order-confirm-time-is-up"));

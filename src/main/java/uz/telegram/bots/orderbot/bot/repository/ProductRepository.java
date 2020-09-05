@@ -18,8 +18,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "WHERE pwc.id = :productWithCountId")
     Product getFromProductWithCountId(long productWithCountId);
 
-    @Query(value = "SELECT p FROM Order o " +
-            "JOIN o.lastChosenProduct p " +
-            "WHERE o.id = :id")
-    Optional<Product> getLastChosenByOrderId(long id);
+    List<Product> deleteAllByCategoryId(int categoryId);
 }

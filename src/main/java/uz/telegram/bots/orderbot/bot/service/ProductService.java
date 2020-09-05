@@ -1,6 +1,5 @@
 package uz.telegram.bots.orderbot.bot.service;
 
-import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.user.Order;
 import uz.telegram.bots.orderbot.bot.user.Product;
 
@@ -15,7 +14,11 @@ public interface ProductService {
 
     Product save(Product product);
     Product fromProductWithCount(long id);
-    void updateProductInformation(List<? extends Category> categories);
 
     Optional<Product> getLastChosenByOrder(Order order);
+    List<Product> deleteAllByCategoryId(int categoryId);
+
+    List<Product> saveAll(List<Product> products);
+
+    void delete(Product product);
 }

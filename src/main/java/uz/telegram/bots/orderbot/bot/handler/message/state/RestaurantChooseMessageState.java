@@ -1,6 +1,5 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
-import com.jayway.jsonpath.PathNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -10,10 +9,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import uz.telegram.bots.orderbot.bot.service.CategoryService;
-import uz.telegram.bots.orderbot.bot.service.OrderService;
-import uz.telegram.bots.orderbot.bot.service.RestaurantService;
-import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
+import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
 import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
@@ -24,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -42,6 +37,7 @@ class RestaurantChooseMessageState implements MessageState {
     private final TelegramUserService userService;
     private final RestaurantService restaurantService;
     private final CategoryService categoryService;
+    private final JowiService jowiService;
     private final OrderService orderService;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
@@ -50,11 +46,12 @@ class RestaurantChooseMessageState implements MessageState {
     @Autowired
     RestaurantChooseMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                  RestaurantService restaurantService, CategoryService categoryService,
-                                 OrderService orderService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
+                                 JowiService jowiService, OrderService orderService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
         this.rbf = rbf;
         this.userService = userService;
         this.restaurantService = restaurantService;
         this.categoryService = categoryService;
+        this.jowiService = jowiService;
         this.orderService = orderService;
         this.kf = kf;
         this.ku = ku;
@@ -116,10 +113,7 @@ class RestaurantChooseMessageState implements MessageState {
             Message message = bot.execute(loadingMessage);
             CompletableFuture<List<Category>> future = CompletableFuture.supplyAsync(() -> {
                 try {
-                    return categoryService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
-                } catch (PathNotFoundException e) { //this is if no categories were returned from jowi server
-                    log.warn("No categories were returned from restaurant " + restaurant.getRestaurantTitle());
-                    return new ArrayList<>();
+                    return jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
                 } catch (IOException e) {
                     JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
                     throw new UncheckedIOException(e);

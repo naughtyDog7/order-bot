@@ -1,12 +1,12 @@
 package uz.telegram.bots.orderbot.bot.user;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -14,9 +14,10 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 @Entity
-@Data
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
+@Getter
+@Setter
 public class TelegramUser {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -52,12 +53,6 @@ public class TelegramUser {
     @Override
     public int hashCode() {
         return Objects.hash(userId);
-    }
-
-    private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
-    @PrePersist
-    public void setLastActive() {
-        lastActive = LocalDateTime.now(tashkentZoneId);
     }
 
     @Override

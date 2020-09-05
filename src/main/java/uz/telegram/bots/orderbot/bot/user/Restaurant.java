@@ -1,7 +1,8 @@
 package uz.telegram.bots.orderbot.bot.user;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -9,9 +10,10 @@ import java.util.*;
 
 import static javax.persistence.FetchType.LAZY;
 
-@Data
 @Entity
 @NoArgsConstructor(force = true)
+@Getter
+@Setter
 public class Restaurant {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -42,13 +44,12 @@ public class Restaurant {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Restaurant that = (Restaurant) o;
-        return id == that.id &&
-                Objects.equals(restaurantId, that.restaurantId);
+        return Objects.equals(restaurantId, that.restaurantId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, restaurantId);
+        return Objects.hash(restaurantId);
     }
 
     @Override

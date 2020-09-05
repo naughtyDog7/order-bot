@@ -47,4 +47,9 @@ public class ProductWithCountServiceImpl implements ProductWithCountService {
     public void deleteById(Long id) {
         repository.deleteById(id);
     }
+
+    @Override
+    public List<ProductWithCount> getWithProductsByOrderId(long id) {
+        return repository.getWithProductsByOrderId(id);
+    }
 }

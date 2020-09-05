@@ -210,7 +210,7 @@ public class WebhookController {
                 .setText(rb.getString("order-was-cancelled"));
         try {
             bot.execute(sendMessage);
-            orderService.cancelOrder(order);
+            orderService.deleteOrder(order);
             ToMainMenuHandler.builder()
                     .telegramUser(telegramUser)
                     .service(userService)

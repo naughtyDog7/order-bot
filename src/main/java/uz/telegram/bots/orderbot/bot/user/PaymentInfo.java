@@ -1,19 +1,20 @@
 package uz.telegram.bots.orderbot.bot.user;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import uz.telegram.bots.orderbot.bot.dto.OrderDto;
 
 import javax.persistence.*;
-import java.util.Objects;
 import java.util.StringJoiner;
 
 import static uz.telegram.bots.orderbot.bot.dto.OrderDto.PaymentMethodDto.AFTER_DELIVERY;
 import static uz.telegram.bots.orderbot.bot.dto.OrderDto.PaymentMethodDto.ONLINE;
 
 @Entity
-@Data
 @NoArgsConstructor
+@Getter
+@Setter
 public class PaymentInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -26,21 +27,6 @@ public class PaymentInfo {
     private Restaurant fromRestaurant;
 
     private PaymentMethod paymentMethod;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PaymentInfo that = (PaymentInfo) o;
-        return id == that.id;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-
 
     @Override
     public String toString() {
