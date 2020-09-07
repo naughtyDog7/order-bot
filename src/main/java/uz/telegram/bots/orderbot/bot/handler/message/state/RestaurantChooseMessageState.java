@@ -113,7 +113,7 @@ class RestaurantChooseMessageState implements MessageState {
             Message message = bot.execute(loadingMessage);
             CompletableFuture<List<Category>> future = CompletableFuture.supplyAsync(() -> {
                 try {
-                    return jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+                    return jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId(), bot, telegramUser);
                 } catch (IOException e) {
                     JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
                     throw new UncheckedIOException(e);

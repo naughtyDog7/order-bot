@@ -89,7 +89,7 @@ class OrderMainMessageState implements MessageState {
             }
 
             Restaurant restaurant = restaurantService.findByOrderId(order.getId());
-            List<Category> categories = jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
+            List<Category> categories = jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId(), bot, telegramUser);
             if (categories.isEmpty()) { // it can be empty if someone modified on server
                 int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
                 ToOrderMainHandler.builder()

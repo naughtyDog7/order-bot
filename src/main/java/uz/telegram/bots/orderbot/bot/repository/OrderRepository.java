@@ -20,4 +20,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findAllByStateAndRestaurantStringId(Order.OrderState state, String restaurantId);
 
     Optional<Order> findByOrderId(String orderId);
+
+    @Query("SELECT o FROM ProductWithCount pwc " +
+            "JOIN pwc.order o " +
+            "WHERE pwc.id = :pwcId")
+    Order findByProductWithCountId(long pwcId);
 }

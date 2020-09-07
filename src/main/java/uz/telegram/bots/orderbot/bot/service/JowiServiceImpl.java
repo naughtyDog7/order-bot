@@ -13,6 +13,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import uz.telegram.bots.orderbot.bot.dto.*;
 import uz.telegram.bots.orderbot.bot.properties.JowiProperties;
 import uz.telegram.bots.orderbot.bot.user.*;
@@ -76,12 +77,14 @@ public class JowiServiceImpl implements JowiService {
      * This method is used to fetch categories for specific restaurant from JOWI api
      *
      * @param restaurantId restaurant id which can be taken from JOWI api
+     * @param bot telegram bot used to send message in case of deleting product which was in someone's basket
+     * @param telegramUser
      * @return loaded categories
      * @throws IllegalStateException if incorrect or invalid response received
      */
     @Override
     //this method fetches categories from jowi api, if anything changed, saves to repo
-    public List<Category> updateAndFetchNonEmptyCategories(String restaurantId) throws IOException {
+    public List<Category> updateAndFetchNonEmptyCategories(String restaurantId, TelegramLongPollingBot bot, TelegramUser telegramUser) throws IOException {
         RequestEntity<Void> requestEntity = RequestEntity.get(uriUtil.getMenuGetUri(restaurantId))
                 .ifNoneMatch(restaurantIdEtags.getOrDefault(restaurantId, "noetag"))
                 .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
@@ -108,14 +111,17 @@ public class JowiServiceImpl implements JowiService {
             }
             for (CategoryDto dto : resultFromServer) {
                 Category oldCategory = categoriesToDelete.stream().filter(c -> c.getName().equals(dto.getTitle())).findAny().orElse(null);
-                Category category = getNewOrUpdateOldDto(dto, oldCategory);
+                Category category = getNewOrUpdateOldCategory(dto, oldCategory, restaurantId, bot, telegramUser);
                 categories.add(category);
             }
             categoriesToDelete.stream()
                     .filter(ctd -> categories.stream()
                             .map(Category::getName)
                             .noneMatch(c -> ctd.getName().equals(c)))
-                    .forEach(categoryService::delete);
+                    .forEach(c -> {
+                        productService.getAllByCategoryId(c.getId()).forEach(p -> productService.delete(p, restaurantId, bot, telegramUser));
+                        categoryService.delete(c);
+                    });
 
 
             categories.forEach(category -> category.setRestaurant(restaurantService.findByRestaurantId(restaurantId)
@@ -129,13 +135,14 @@ public class JowiServiceImpl implements JowiService {
         }
     }
 
-    private Category getNewOrUpdateOldDto(CategoryDto categoryDto, Category oldCategory) {
+    private Category getNewOrUpdateOldCategory(CategoryDto categoryDto, Category oldCategory, String restaurantId,
+                                               TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Category category = Objects.requireNonNullElseGet(oldCategory, Category::new);
         List<Product> productsToDelete = productService.getAllByCategoryId(category.getId());
         category.setName(categoryDto.getTitle());
         List<Product> products = new ArrayList<>();
         for (ProductDto productDto : categoryDto.getCourses()) {
-            Product product = getNewOrUpdateOldFromDto(productDto, productsToDelete.stream()
+            Product product = getNewOrUpdateOldProduct(productDto, productsToDelete.stream()
                     .filter(p -> p.getProductId().equals(productDto.getId()))
                     .findAny().orElse(null));
             product.setCategory(category);
@@ -145,7 +152,7 @@ public class JowiServiceImpl implements JowiService {
                 .filter(ptd -> products.stream()
                         .map(Product::getProductId)
                         .noneMatch(id -> ptd.getProductId().equals(id)))
-                .forEach(productService::delete);
+                .forEach(p -> productService.delete(p, restaurantId, bot, telegramUser));
         category.setProducts(products);
         return category;
     }
@@ -165,9 +172,9 @@ public class JowiServiceImpl implements JowiService {
                 .collect(Collectors.toList());
 
         for (ProductWithCount pwc : productWithCounts) {
-            int index = products.indexOf(pwc.getProduct());
+            Product product = productService.fromProductWithCount(pwc.getId());
+            int index = products.indexOf(product);
             if (index >= 0) {
-                Product product = products.get(index);
                 product.setCountLeft(product.getCountLeft() - pwc.getCount());
             }
         }
@@ -175,7 +182,7 @@ public class JowiServiceImpl implements JowiService {
         productService.saveAll(products);
     }
 
-    public Product getNewOrUpdateOldFromDto(ProductDto productDto, Product oldProduct) {
+    public Product getNewOrUpdateOldProduct(ProductDto productDto, Product oldProduct) {
         Product product;
         product = Objects.requireNonNullElseGet(oldProduct, Product::new);
         product.setProductId(productDto.getId());
@@ -185,7 +192,7 @@ public class JowiServiceImpl implements JowiService {
         return productService.save(product);
     }
 
-    public Restaurant getNewOrUpdateOldDto(RestaurantDto restaurantDto, Restaurant oldRestaurant) {
+    public Restaurant getNewOrUpdateOldRestaurant(RestaurantDto restaurantDto, Restaurant oldRestaurant) {
         Map<DayOfWeek, WorkingTime> workingTimes = restaurantDto.getDays().stream()
                 .filter(d -> d.getTimetableCode() == 1)
                 .collect(Collectors.toMap(d -> DayOfWeek.of(d.getDayCode()), DayDto::toWorkingTime,
@@ -241,7 +248,7 @@ public class JowiServiceImpl implements JowiService {
                 Restaurant oldRestaurant = restaurantsToDelete.stream()
                         .filter(r -> r.getRestaurantId().equals(dto.getId()))
                         .findAny().orElse(null);
-                Restaurant restaurant = getNewOrUpdateOldDto(dto, oldRestaurant);
+                Restaurant restaurant = getNewOrUpdateOldRestaurant(dto, oldRestaurant);
                 restaurants.add(restaurant);
             }
             restaurantsToDelete.stream()

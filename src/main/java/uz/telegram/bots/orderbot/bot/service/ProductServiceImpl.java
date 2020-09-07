@@ -2,35 +2,50 @@ package uz.telegram.bots.orderbot.bot.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.repository.OrderRepository;
 import uz.telegram.bots.orderbot.bot.repository.ProductRepository;
+import uz.telegram.bots.orderbot.bot.repository.ProductWithCountRepository;
 import uz.telegram.bots.orderbot.bot.repository.RestaurantRepository;
 import uz.telegram.bots.orderbot.bot.user.Order;
 import uz.telegram.bots.orderbot.bot.user.Product;
-import uz.telegram.bots.orderbot.bot.user.Restaurant;
+import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
+import uz.telegram.bots.orderbot.bot.user.TelegramUser;
+import uz.telegram.bots.orderbot.bot.util.LockFactory;
+import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.concurrent.locks.Lock;
+
+import static uz.telegram.bots.orderbot.bot.user.Order.OrderState.ACTIVE;
 
 @Service
 @Transactional
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final RestaurantRepository restaurantRepository;
-    private final ProductWithCountService pwcService;
+    private final ProductWithCountRepository pwcRepository;
     private final OrderRepository orderRepository;
     private final TelegramUserService userService;
+    private final ResourceBundleFactory rbf;
+    private final LockFactory lf;
 
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository, RestaurantRepository restaurantRepository,
-                              ProductWithCountService pwcService, OrderRepository orderRepository,
-                              TelegramUserService userService) {
+                              ProductWithCountRepository pwcRepository, OrderRepository orderRepository,
+                              TelegramUserService userService, ResourceBundleFactory rbf, LockFactory lf) {
         this.productRepository = productRepository;
         this.restaurantRepository = restaurantRepository;
-        this.pwcService = pwcService;
+        this.pwcRepository = pwcRepository;
         this.orderRepository = orderRepository;
         this.userService = userService;
+        this.rbf = rbf;
+        this.lf = lf;
     }
 
     @Override
@@ -63,7 +78,32 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void delete(Product product) {
+    public void delete(Product product, String restaurantId, TelegramLongPollingBot bot, TelegramUser callerUser) {
+        List<ProductWithCount> pwcsToDelete =
+                pwcRepository.findAllToDeleteByRestaurantAndProduct(restaurantId, product.getProductId(), ACTIVE);
+        for (ProductWithCount pwc: pwcsToDelete) {
+            Order order = orderRepository.findByProductWithCountId(pwc.getId());
+            TelegramUser telegramUser = userService.findByOrderId(order.getId());
+            Lock lock = null;
+            try {
+                if (!telegramUser.equals(callerUser)) {
+                    lock = lf.getLockForChatId(telegramUser.getChatId());
+                    lock.lock();
+                }
+                pwcRepository.delete(pwc);
+                ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+                SendMessage sendMessage = new SendMessage()
+                        .setChatId(telegramUser.getChatId())
+                        .setText(rb.getString("product-on-server-deleted-and-removed-from-basket")
+                                .replace("{productName}", product.getName()));
+                bot.execute(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            } finally {
+                if (lock != null)
+                    lock.unlock();
+            }
+        }
         productRepository.delete(product);
     }
 }
