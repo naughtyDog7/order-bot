@@ -16,7 +16,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(value = "SELECT p FROM ProductWithCount pwc " +
             "JOIN pwc.product p " +
             "WHERE pwc.id = :productWithCountId")
-    Product getFromProductWithCountId(long productWithCountId);
+    Product findByProductWithCountId(long productWithCountId);
 
     List<Product> deleteAllByCategoryId(int categoryId);
 }

@@ -15,5 +15,5 @@ public interface TelegramUserRepository extends JpaRepository<TelegramUser, Inte
     @Query("SELECT tu FROM Order o " +
             "JOIN o.telegramUser tu " +
             "WHERE o.id = :orderId")
-    TelegramUser getByOrderId(long orderId);
+    TelegramUser findByOrderId(long orderId);
 }

@@ -22,6 +22,6 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public TelegramLocation findByPaymentInfoId(long id) {
-        return locationRepository.getByPaymentInfoId(id);
+        return locationRepository.findByPaymentInfoId(id);
     }
 }

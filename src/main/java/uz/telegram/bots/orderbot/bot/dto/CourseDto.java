@@ -3,6 +3,7 @@ package uz.telegram.bots.orderbot.bot.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import uz.telegram.bots.orderbot.bot.service.ProductService;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
 
 @Getter
@@ -17,8 +18,7 @@ public class CourseDto {
         this.courseId = courseId;
     }
 
-    //pass only eagerly initialized productwithcount
-    public static CourseDto fromProductWithCount(ProductWithCount productWithCount) {
-        return new CourseDto(productWithCount.getCount(), productWithCount.getProduct().getProductId());
+    public static CourseDto fromProductWithCount(ProductWithCount productWithCount, ProductService productService) {
+        return new CourseDto(productWithCount.getCount(), productService.fromProductWithCount(productWithCount.getId()).getProductId());
     }
 }

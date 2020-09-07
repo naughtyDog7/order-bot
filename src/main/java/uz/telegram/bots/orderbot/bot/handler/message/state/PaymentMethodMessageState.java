@@ -63,7 +63,7 @@ class PaymentMethodMessageState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Order order = orderService.getActive(telegramUser)
+            Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (text.equals(btnBack)) {
                 handleBack(bot, telegramUser, rb, order);
@@ -80,7 +80,7 @@ class PaymentMethodMessageState implements MessageState {
         String btnCash = rb.getString("btn-cash");
         String btnClick = rb.getString("btn-click");
         String btnPayme = rb.getString("btn-payme");
-        PaymentInfo paymentInfo = paymentInfoService.getFromOrderId(order.getId());
+        PaymentInfo paymentInfo = paymentInfoService.findByOrderId(order.getId());
 
         String chosenMethod;
         if (text.equals(btnCash)) {
@@ -102,7 +102,7 @@ class PaymentMethodMessageState implements MessageState {
                 .setText(rb.getString("payment-method-chosen") + ": \"" + chosenMethod + "\"");
 
         StringBuilder messageText = new StringBuilder(rb.getString("confirm-before-send-to-server")).append("\n");
-        List<ProductWithCount> products = pwcService.getAllFromOrderId(order.getId());
+        List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
         tu.appendProducts(messageText, products, rb);
         tu.appendPhoneNum(messageText, telegramUser.getPhoneNum(), rb);
         tu.appendNoNameLocation(messageText, rb);

@@ -58,7 +58,7 @@ class LocationSendState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Order order = orderService.getActive(telegramUser)
+            Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (message.hasText()) {
                 String text = message.getText();
@@ -80,12 +80,12 @@ class LocationSendState implements MessageState {
 
     private void handleLocation(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Location location) {
         TelegramLocation tLocation = TelegramLocation.of(location.getLatitude(), location.getLongitude());
-        PaymentInfo paymentInfo = paymentInfoService.getFromOrderId(order.getId());
+        PaymentInfo paymentInfo = paymentInfoService.findByOrderId(order.getId());
         paymentInfo.setOrderLocation(tLocation);
         paymentInfoService.save(paymentInfo);
 
         StringBuilder curOrderText = new StringBuilder(rb.getString("your-order")).append("\n");
-        List<ProductWithCount> products = pwcService.getAllFromOrderId(order.getId());
+        List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
         tu.appendProducts(curOrderText, products, rb);
         tu.appendPhoneNum(curOrderText, telegramUser.getPhoneNum(), rb);
         tu.appendNoNameLocation(curOrderText, rb);

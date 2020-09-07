@@ -70,7 +70,7 @@ class FinalConfirmationMessageState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Order order = orderService.getActive(telegramUser)
+            Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (text.equals(btnBack)) {
                 handleBack(bot, telegramUser, rb, order);
@@ -88,7 +88,7 @@ class FinalConfirmationMessageState implements MessageState {
 
     private void handleConfirm(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         try {
-            Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+            Restaurant restaurant = restaurantService.findByOrderId(order.getId());
             LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
             if (!restaurantService.isOpened(curTime, restaurant)) {
                 DefaultBadRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);

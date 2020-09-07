@@ -34,22 +34,17 @@ public class ProductWithCountServiceImpl implements ProductWithCountService {
     }
 
     @Override
-    public Optional<ProductWithCount> getByOrderIdAndProductName(long orderId, String productName) {
+    public Optional<ProductWithCount> findByOrderIdAndProductName(long orderId, String productName) {
         return repository.findByOrderIdAndProductName(orderId, productName);
     }
 
     @Override
-    public List<ProductWithCount> getAllFromOrderId(long orderId) {
-        return repository.findAllByOrderId(orderId);
+    public List<ProductWithCount> findByOrderId(long orderId) {
+        return repository.findByOrderId(orderId);
     }
 
     @Override
     public void deleteById(Long id) {
         repository.deleteById(id);
-    }
-
-    @Override
-    public List<ProductWithCount> getWithProductsByOrderId(long id) {
-        return repository.getWithProductsByOrderId(id);
     }
 }

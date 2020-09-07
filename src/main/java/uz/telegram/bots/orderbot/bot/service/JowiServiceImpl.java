@@ -122,7 +122,7 @@ public class JowiServiceImpl implements JowiService {
                     .orElseThrow(() -> new AssertionError("Restaurant must be found at this point"))));
 
             List<Category> result = categoryService.saveAll(categories);
-            updateProductInformation(result);
+            updateProductInformation(result, restaurantId);
             return result;
         } else {
             throw new IOException("Was waiting for status code 200 or 304, got response " + jsonResponse);
@@ -150,8 +150,10 @@ public class JowiServiceImpl implements JowiService {
         return category;
     }
 
-    public void updateProductInformation(List<? extends Category> categories) {
-        List<Order> activeOrders = orderService.getAllActive();
+    public void updateProductInformation(List<? extends Category> categories, String restaurantId) {
+        Restaurant restaurant = restaurantService.findByRestaurantId(restaurantId)
+                .orElseThrow(() -> new AssertionError("Restaurant must be present at this point"));
+        List<Order> activeOrders = orderService.findActiveForRestaurant(restaurant);
         List<Product> products = categories.stream().flatMap(c -> c.getProducts().stream())
                 .collect(Collectors.toList());
 
@@ -159,7 +161,7 @@ public class JowiServiceImpl implements JowiService {
                 .forEach(p -> p.setCountLeft(Integer.MAX_VALUE));
 
         List<ProductWithCount> productWithCounts = activeOrders.stream()
-                .flatMap(o -> o.getProducts().stream())
+                .flatMap(o -> pwcService.findByOrderId(o.getId()).stream())
                 .collect(Collectors.toList());
 
         for (ProductWithCount pwc : productWithCounts) {
@@ -255,20 +257,20 @@ public class JowiServiceImpl implements JowiService {
 
     @Override
     public void postOrder(Order order, TelegramUser user) throws IOException {
-        List<ProductWithCount> products = pwcService.getWithProductsByOrderId(order.getId());
-        Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+        List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
+        Restaurant restaurant = restaurantService.findByOrderId(order.getId());
         OrderWrapper orderWrapper = new OrderWrapper(jowiProperties.getApiKey(), jowiProperties.getSig(), restaurant.getRestaurantId());
-        PaymentInfo paymentInfo = paymentInfoService.getFromOrderId(order.getId());
+        PaymentInfo paymentInfo = paymentInfoService.findByOrderId(order.getId());
         TelegramLocation location = locationService.findByPaymentInfoId(paymentInfo.getId());
         OrderDto orderDto = new OrderDto(location.toString(), null,
                 user.getPhoneNum(), DELIVERY, 0, paymentInfo.getPaymentMethod().toDto());
         orderWrapper.setOrder(orderDto);
         orderDto.setCourses(products.stream()
-                .map(CourseDto::fromProductWithCount)
+                .map(pwc -> CourseDto.fromProductWithCount(pwc, productService))
                 .collect(Collectors.toList()));
         long amountOrder = 0;
         for (ProductWithCount product : products) {
-            amountOrder += product.getCount() * (long) product.getProduct().getPrice();
+            amountOrder += product.getCount() * (long) productService.fromProductWithCount(product.getId()).getPrice();
         }
         orderDto.setAmountOrder(amountOrder);
 

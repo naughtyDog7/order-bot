@@ -25,7 +25,7 @@ public class TelegramUserServiceImpl implements TelegramUserService {
     }
 
     @Override
-    public List<TelegramUser> getCommentReceivers() {
+    public List<TelegramUser> findCommentReceivers() {
         return repo.findAllByReceiveCommentsTrue();
     }
 
@@ -60,7 +60,7 @@ public class TelegramUserServiceImpl implements TelegramUserService {
     }
 
     @Override
-    public TelegramUser getByOrderId(long id) {
-        return repo.getByOrderId(id);
+    public TelegramUser findByOrderId(long id) {
+        return repo.findByOrderId(id);
     }
 }

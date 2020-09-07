@@ -13,10 +13,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findFirstByStateIsAndTelegramUser(Order.OrderState state, TelegramUser user);
 
 
-    @Query(value = "SELECT o FROM Order o " +
-            "JOIN FETCH o.products " +
-            "WHERE o.state = :state")
-    List<Order> findAllByStateWithProducts(Order.OrderState state);
+    @Query(value = "SELECT o FROM Order o "  +
+            "JOIN o.paymentInfo pi " +
+            "JOIN pi.fromRestaurant r " +
+            "WHERE o.state = :state AND r.restaurantId = :restaurantId")
+    List<Order> findAllByStateAndRestaurantStringId(Order.OrderState state, String restaurantId);
 
-    Optional<Order> getByOrderId(String orderId);
+    Optional<Order> findByOrderId(String orderId);
 }

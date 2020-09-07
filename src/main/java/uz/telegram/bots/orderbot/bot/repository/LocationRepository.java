@@ -8,5 +8,5 @@ public interface LocationRepository extends JpaRepository<TelegramLocation, Long
     @Query("SELECT l FROM PaymentInfo pi " +
             "JOIN pi.orderLocation l " +
             "WHERE pi.id = :id")
-    TelegramLocation getByPaymentInfoId(long id);
+    TelegramLocation findByPaymentInfoId(long id);
 }

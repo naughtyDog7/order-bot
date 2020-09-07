@@ -8,5 +8,5 @@ public interface PaymentInfoRepository extends JpaRepository<PaymentInfo, Long> 
     @Query("SELECT pi FROM Order o " +
             "JOIN o.paymentInfo pi " +
             "WHERE o.id = :orderId")
-    PaymentInfo getByOrderId(long orderId);
+    PaymentInfo findByOrderId(long orderId);
 }

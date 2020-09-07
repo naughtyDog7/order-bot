@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface RestaurantService {
     Optional<Restaurant> findByRestaurantId(String restaurantId);
-    Restaurant getByOrderId(long orderId);
+    Restaurant findByOrderId(long orderId);
 
     Optional<Restaurant> findByTitle(String restaurantTitle);
     boolean isOpened(LocalDateTime dateTime, Restaurant restaurant);

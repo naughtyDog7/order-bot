@@ -89,9 +89,9 @@ public class WebhookController {
     //      4 	Заказ доставлен
 
     private void proceedOrderUpdate(WebhookOrderDto orderDto) {
-        Order order = orderService.getByOrderStringId(orderDto.getOrderId())
+        Order order = orderService.findByOrderStringId(orderDto.getOrderId())
                 .orElseThrow(() -> new AssertionError("Order must be present when receiving webhook"));
-        TelegramUser telegramUser = userService.getByOrderId(order.getId());
+        TelegramUser telegramUser = userService.findByOrderId(order.getId());
         Lock lock = lf.getLockForChatId(telegramUser.getChatId());
         try {
             lock.lock();
@@ -122,7 +122,7 @@ public class WebhookController {
                 .setText(rb.getString("order-is-accepted-from-server"));
         try {
             bot.execute(sendMessage);
-            PaymentInfo pi = paymentInfoService.getFromOrderId(order.getId());
+            PaymentInfo pi = paymentInfoService.findByOrderId(order.getId());
             PaymentMethod paymentMethod = pi.getPaymentMethod();
             if (paymentMethod == CLICK || paymentMethod == PAYME) {
                 handleOnline(telegramUser, order, rb, paymentMethod);
@@ -172,7 +172,7 @@ public class WebhookController {
 
     private SendInvoice createInvoice(TelegramUser telegramUser, Order order, ResourceBundle rb, PaymentMethod paymentMethod) {
         List<LabeledPrice> prices = new ArrayList<>();
-        for (ProductWithCount pwc : pwcService.getAllFromOrderId(order.getId())) {
+        for (ProductWithCount pwc : pwcService.findByOrderId(order.getId())) {
             Product product = productService.fromProductWithCount(pwc.getId());
             prices.add(new LabeledPrice(product.getName() + "*" + pwc.getCount(), product.getPrice() * 100 * pwc.getCount()));
         }

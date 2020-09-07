@@ -71,7 +71,7 @@ class OrderMainMessageState implements MessageState {
         }
 
         String text = message.getText();
-        Order order = orderService.getActive(telegramUser)
+        Order order = orderService.findActive(telegramUser)
                 .orElseThrow(() -> new AssertionError("Order must be present at this point"));
         Lock lock = lf.getResourceLock();
         try {
@@ -88,7 +88,7 @@ class OrderMainMessageState implements MessageState {
                 return;
             }
 
-            Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+            Restaurant restaurant = restaurantService.findByOrderId(order.getId());
             List<Category> categories = jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId());
             if (categories.isEmpty()) { // it can be empty if someone modified on server
                 int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
@@ -163,7 +163,7 @@ class OrderMainMessageState implements MessageState {
 
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         StringBuilder text = new StringBuilder(rb.getString("your-order")).append("\n");
-        List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
+        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
         if (products.isEmpty()) {
             DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
@@ -210,7 +210,7 @@ class OrderMainMessageState implements MessageState {
     }
 
     private void handleBasket(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
+        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
         if (products.isEmpty()) {
             handleEmptyBasket(bot, telegramUser, rb);
             return;

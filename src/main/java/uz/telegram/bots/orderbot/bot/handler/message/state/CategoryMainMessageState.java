@@ -65,18 +65,18 @@ class CategoryMainMessageState implements MessageState {
 
         String backButtonText = rb.getString("btn-back");
         String text = message.getText();
-        Order order = orderService.getActive(telegramUser)
+        Order order = orderService.findActive(telegramUser)
                 .orElseThrow(() -> new AssertionError("Order must be present at this point"));
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+            Restaurant restaurant = restaurantService.findByOrderId(order.getId());
             if (text.equals(backButtonText)) {
                 List<Category> categories = categoryService.findNonEmptyByRestaurantStringId(restaurant.getRestaurantId());
                 int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
                 handleBack(bot, telegramUser, rb, categories, basketItemsNum);
             } else {
-                Category category = categoryService.getLastChosenByOrder(order)
+                Category category = categoryService.findLastChosenByOrder(order)
                         .orElseThrow(() -> new AssertionError("Category must be present at this point"));
                 Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
 

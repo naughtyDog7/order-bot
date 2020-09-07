@@ -5,14 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import uz.telegram.bots.orderbot.bot.properties.JowiProperties;
 import uz.telegram.bots.orderbot.bot.repository.*;
-import uz.telegram.bots.orderbot.bot.user.Order;
-import uz.telegram.bots.orderbot.bot.user.Product;
-import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
-import uz.telegram.bots.orderbot.bot.user.TelegramUser;
+import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.UriUtil;
 
 import javax.transaction.Transactional;
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,7 +49,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Optional<Order> getActive(TelegramUser user) {
+    public Optional<Order> findActive(TelegramUser user) {
         return orderRepository.findFirstByStateIsAndTelegramUser(ACTIVE, user);
     }
 
@@ -63,13 +59,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Optional<Order> getByOrderStringId(String orderId) {
-        return orderRepository.getByOrderId(orderId);
+    public Optional<Order> findByOrderStringId(String orderId) {
+        return orderRepository.findByOrderId(orderId);
     }
 
     @Override
     public void deleteOrder(Order order) {
-        List<ProductWithCount> productsWithCount = productWithCountRepository.getAllByOrder(order);
+        List<ProductWithCount> productsWithCount = productWithCountRepository.findByOrderId(order.getId());
         for (ProductWithCount productWithCount : productsWithCount) {
             Product product = productService.fromProductWithCount(productWithCount.getId());
             product.setCountLeft(product.getCountLeft() + productWithCount.getCount());
@@ -79,7 +75,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Order> getAllActive() {
-        return orderRepository.findAllByStateWithProducts(ACTIVE);
+    public List<Order> findActiveForRestaurant(Restaurant restaurant) {
+        return orderRepository.findAllByStateAndRestaurantStringId(ACTIVE, restaurant.getRestaurantId());
     }
 }

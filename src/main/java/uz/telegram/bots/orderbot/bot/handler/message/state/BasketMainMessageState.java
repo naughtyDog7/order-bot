@@ -62,7 +62,7 @@ class BasketMainMessageState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Order order = orderService.getActive(telegramUser)
+            Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             int basketNumItems = productWithCountService.getBasketItemsCount(order.getId());
             if (text.equals(btnBack)) {
@@ -72,7 +72,7 @@ class BasketMainMessageState implements MessageState {
             String removeProductCharText = rb.getString("remove-product-char");
             text = text.replace(removeProductCharText, "").strip(); //remove ❌ to get clean product name
 
-            Optional<ProductWithCount> optProduct = productWithCountService.getByOrderIdAndProductName(order.getId(), text);
+            Optional<ProductWithCount> optProduct = productWithCountService.findByOrderIdAndProductName(order.getId(), text);
             String finalProductName = text;
             optProduct.ifPresentOrElse(product -> handleItemDelete(bot, telegramUser, rb, order, product, finalProductName, basketNumItems),
                     () -> DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
@@ -100,7 +100,7 @@ class BasketMainMessageState implements MessageState {
         SendMessage sendMessage1 = new SendMessage()
                 .setText(rb.getString("deleted") + "❌ " + productName)
                 .setChatId(telegramUser.getChatId());
-        List<ProductWithCount> products = productWithCountService.getAllFromOrderId(order.getId());
+        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
 
         String text = tu.appendProducts(new StringBuilder(), products, rb).toString();
         SendMessage sendMessage2 = new SendMessage()

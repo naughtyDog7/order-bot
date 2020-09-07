@@ -107,7 +107,7 @@ class MainMenuMessageState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            if (orderService.getActive(telegramUser).isPresent()) {
+            if (orderService.findActive(telegramUser).isPresent()) {
                 SendMessage sendMessage = new SendMessage()
                         .setChatId(telegramUser.getChatId())
                         .setText(rb.getString("double-order-failure"));

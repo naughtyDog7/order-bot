@@ -31,24 +31,14 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
             "JOIN r.categories c " +
             "WHERE o.id = :orderId AND " +
             "(SELECT count(p) FROM Product p WHERE p MEMBER OF c.products AND p.countLeft > 0) > 0")
-    List<Category> findAllNonEmptyByOrderId(long orderId);
+    List<Category> findNonEmptyByOrderId(long orderId);
 
     List<Category> findAllByRestaurantRestaurantId(String restaurantId);
-
-
-    Optional<Category> findByNameAndRestaurantRestaurantId(String name, String restaurantId);
 
     @Query(value = "SELECT c FROM Order o " +
             "JOIN o.paymentInfo pi " +
             "JOIN pi.fromRestaurant r " +
             "JOIN r.categories c " +
             "WHERE o.id = :id AND c.name = o.lastChosenCategoryName")
-    Optional<Category> getLastChosenByOrderId(long id);
-
-    @Query("SELECT c FROM Category c " +
-            "JOIN FETCH c.products p " +
-            "WHERE c.id = :id")
-    Optional<Category> getWithProductsById(int id);
-
-    List<Category> deleteAllByRestaurantRestaurantId(String restaurantId);
+    Optional<Category> findLastChosenByOrderId(long id);
 }

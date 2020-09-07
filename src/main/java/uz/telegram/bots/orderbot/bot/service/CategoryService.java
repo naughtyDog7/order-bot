@@ -13,7 +13,7 @@ public interface CategoryService {
 
     List<Category> findNonEmptyByOrderId(long orderId);
 
-    Optional<Category> getLastChosenByOrder(Order order);
+    Optional<Category> findLastChosenByOrder(Order order);
 
     List<Category> findAllByRestaurantStringId(String id);
 

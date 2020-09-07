@@ -63,7 +63,7 @@ class OrderPhoneNumState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Order order = orderService.getActive(telegramUser)
+            Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (message.hasText()) {
                 String btnBack = rb.getString("btn-back");

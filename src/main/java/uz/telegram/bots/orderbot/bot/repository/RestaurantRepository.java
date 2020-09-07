@@ -13,7 +13,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
             "JOIN o.paymentInfo pi " +
             "JOIN pi.fromRestaurant r " +
             "WHERE o.id = :orderId AND o.paymentInfo.fromRestaurant.restaurantId = r.restaurantId")
-    Restaurant getByOrderId(long orderId);
+    Restaurant findByOrderId(long orderId);
 
     Optional<Restaurant> findByRestaurantTitle(String restaurantTitle);
 }

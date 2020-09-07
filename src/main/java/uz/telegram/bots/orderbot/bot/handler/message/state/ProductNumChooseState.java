@@ -65,11 +65,11 @@ class ProductNumChooseState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            Order order = orderService.getActive(telegramUser)
+            Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             Product product = productService.getLastChosenByOrder(order)
                     .orElseThrow(() -> new AssertionError("Product must be present at this point"));
-            Restaurant restaurant = restaurantService.getByOrderId(order.getId());
+            Restaurant restaurant = restaurantService.findByOrderId(order.getId());
             if (text.equals(btnBackText)) {
                 handleBack(bot, telegramUser, rb, order);
                 return;
@@ -183,7 +183,7 @@ class ProductNumChooseState implements MessageState {
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        Category category = categoryService.getLastChosenByOrder(order)
+        Category category = categoryService.findLastChosenByOrder(order)
                 .orElseThrow(() -> new AssertionError("Category must be present at this point"));
         List<Product> products = productService.getAllByCategoryId(category.getId());
         ToCategoryMainHandler.builder()

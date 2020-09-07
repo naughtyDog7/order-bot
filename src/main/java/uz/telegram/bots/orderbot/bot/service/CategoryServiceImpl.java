@@ -48,12 +48,12 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<Category> findNonEmptyByOrderId(long orderId) {
-        return categoryRepository.findAllNonEmptyByOrderId(orderId);
+        return categoryRepository.findNonEmptyByOrderId(orderId);
     }
 
     @Override
-    public Optional<Category> getLastChosenByOrder(Order order) {
-        return categoryRepository.getLastChosenByOrderId(order.getId());
+    public Optional<Category> findLastChosenByOrder(Order order) {
+        return categoryRepository.findLastChosenByOrderId(order.getId());
     }
 
     @Override

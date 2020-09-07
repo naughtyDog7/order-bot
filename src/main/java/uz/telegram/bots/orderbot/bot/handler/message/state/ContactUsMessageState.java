@@ -48,7 +48,7 @@ class ContactUsMessageState implements MessageState {
     }
 
     private void handleComment(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        List<TelegramUser> commentReceivers = service.getCommentReceivers();
+        List<TelegramUser> commentReceivers = service.findCommentReceivers();
         String commentText = update.getMessage().getText();
 
 

@@ -12,11 +12,9 @@ public interface ProductWithCountService {
 
     Optional<ProductWithCount> findByOrderIdAndProductId(long orderId, long productId);
 
-    List<ProductWithCount> getAllFromOrderId(long orderId);
+    List<ProductWithCount> findByOrderId(long orderId);
 
-    Optional<ProductWithCount> getByOrderIdAndProductName(long orderId, String productName);
+    Optional<ProductWithCount> findByOrderIdAndProductName(long orderId, String productName);
 
     void deleteById(Long aLong);
-
-    List<ProductWithCount> getWithProductsByOrderId(long id);
 }
