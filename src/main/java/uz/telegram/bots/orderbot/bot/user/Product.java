@@ -30,6 +30,8 @@ public class Product {
     @ToString.Exclude
     private Category category;
 
+    private String imageUrl;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

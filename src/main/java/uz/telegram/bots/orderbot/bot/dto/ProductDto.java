@@ -14,6 +14,8 @@ public class ProductDto {
     private String id;
     private String title;
     private double price;
+    @JsonProperty("image_url")
+    private String imageUrl;
 
     @JsonProperty("price_for_online_order")
     private double priceForOnlineOrder;

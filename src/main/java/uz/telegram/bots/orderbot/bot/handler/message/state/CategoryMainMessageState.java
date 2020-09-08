@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -15,6 +16,9 @@ import uz.telegram.bots.orderbot.bot.util.KeyboardUtil;
 import uz.telegram.bots.orderbot.bot.util.LockFactory;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -89,23 +93,44 @@ class CategoryMainMessageState implements MessageState {
     }
 
     private void handleProduct(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Product product, Order order) {
-        SendMessage sendMessage1 = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(String.format("%s %d %s", rb.getString("this-courses-price-is"), product.getPrice(), rb.getString("uzs-text")));
-
-        SendMessage sendMessage2 = new SendMessage()
+        sendProductMessage(bot, telegramUser, rb, product);
+        SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("choose-product-num"));
-
-        setProductKeyboard(sendMessage2, telegramUser.getLangISO(), product);
-
+        setProductKeyboard(sendMessage, telegramUser.getLangISO(), product);
         try {
-            bot.execute(sendMessage1);
-            bot.execute(sendMessage2);
+            bot.execute(sendMessage);
             telegramUser.setCurState(TelegramUser.UserState.PRODUCT_NUM_CHOOSE);
             service.save(telegramUser);
             order.setLastChosenProductStringId(product.getProductId());
             orderService.save(order);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendProductMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Product product) {
+        String imageUrl = product.getImageUrl();
+        if (imageUrl != null) {
+            try {
+                URL url = new URL(imageUrl);
+                URLConnection urlConnection = url.openConnection();
+                SendPhoto sendPhoto = new SendPhoto()
+                        .setPhoto(product.getName(), urlConnection.getInputStream())
+                        .setChatId(telegramUser.getChatId())
+                        .setCaption(String.format("%s: %d %s", rb.getString("price"), product.getPrice(), rb.getString("uzs-text")));
+                bot.execute(sendPhoto);
+                return;
+            } catch (IOException ignored) { // this exceptions are ignored because if photo cannot be found or fetched alternate way will be used
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(String.format("%s %d %s", rb.getString("this-courses-price-is"), product.getPrice(), rb.getString("uzs-text")));
+        try {
+            bot.execute(sendMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
