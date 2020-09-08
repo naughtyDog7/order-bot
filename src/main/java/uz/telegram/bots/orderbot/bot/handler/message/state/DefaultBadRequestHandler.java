@@ -51,4 +51,15 @@ public class DefaultBadRequestHandler {
             e.printStackTrace();
         }
     }
+
+    public static void handleBadPhoneNumber(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage sendMessage = new SendMessage()
+                .setText(rb.getString("enter-phone-num-in-format"))
+                .setChatId(telegramUser.getChatId());
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

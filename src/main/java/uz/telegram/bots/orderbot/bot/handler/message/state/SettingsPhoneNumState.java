@@ -19,6 +19,8 @@ import uz.telegram.bots.orderbot.bot.util.LockFactory;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
 
@@ -47,6 +49,8 @@ class SettingsPhoneNumState implements MessageState {
         this.lf = lf;
     }
 
+    private static final Pattern PHONE_NUM_PATTERN = Pattern.compile("^(?:\\+?998)?[ -]?(\\d{2})[ -]?(\\d{3})[ -]?(\\d{2})[ -]?(\\d{2})$");
+
     @Override
     //can come as contact, back button, confirm button, and change button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
@@ -58,26 +62,30 @@ class SettingsPhoneNumState implements MessageState {
             String text = message.getText();
             if (text.equals(btnBack))
                 handleBack(bot, telegramUser, rb);
-            else
-                DefaultBadRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
-            return;
-        } else if (!message.hasContact()) {
+            else handlePhoneNum(bot, telegramUser, rb, text);
+        } else if (message.hasContact()) {
+            Contact contact = message.getContact();
+            String phoneNum = contact.getPhoneNumber();
+            handlePhoneNum(bot, telegramUser, rb, phoneNum);
+        } else {
             DefaultBadRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
-            return;
         }
-        Contact contact = message.getContact();
-        String phoneNum = contact.getPhoneNumber();
-
-        handlePhoneNum(bot, telegramUser, rb, phoneNum);
-
     }
 
     private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
+        Matcher m = PHONE_NUM_PATTERN.matcher(phoneNum);
+        String cleanedPhoneNum;
+        if (m.matches()) {
+            cleanedPhoneNum = m.group(1) + "-" + m.group(2) + "-" + m.group(3) + "-" + m.group(4);
+        } else {
+            DefaultBadRequestHandler.handleBadPhoneNumber(bot, telegramUser, rb);
+            return;
+        }
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("phone-set-success"));
         ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, true);
-        telegramUser.setPhoneNum(phoneNum);
+        telegramUser.setPhoneNum(cleanedPhoneNum);
         userService.save(telegramUser);
 
         try {
