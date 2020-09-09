@@ -17,6 +17,8 @@ public class OrderDto {
     @JsonProperty("order_type")
     private OrderType orderType;
     private List<CourseDto> courses = new ArrayList<>();
+    @JsonProperty("delivery_price")
+    private int deliveryPrice;
 
     @JsonProperty("amount_order")
     private double amountOrder;

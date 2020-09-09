@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import uz.telegram.bots.orderbot.bot.properties.AppProperties;
 import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.*;
@@ -36,16 +37,17 @@ class OrderMainMessageState implements MessageState {
     private final RestaurantService restaurantService;
     private final ProductService productService;
     private final JowiService jowiService;
-    private final ProductWithCountService productWithCountService;
+    private final ProductWithCountService pwcService;
     private final LockFactory lf;
     private final TextUtil tu;
+    private final AppProperties appProperties;
 
     @Autowired
     OrderMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                           KeyboardFactory kf, KeyboardUtil ku, CategoryService categoryService,
                           OrderService orderService, RestaurantService restaurantService,
-                          ProductService productService, JowiService jowiService, ProductWithCountService productWithCountService,
-                          LockFactory lf, TextUtil tu) {
+                          ProductService productService, JowiService jowiService, ProductWithCountService pwcService,
+                          LockFactory lf, TextUtil tu, AppProperties appProperties) {
         this.rbf = rbf;
         this.userService = userService;
         this.kf = kf;
@@ -55,9 +57,10 @@ class OrderMainMessageState implements MessageState {
         this.restaurantService = restaurantService;
         this.productService = productService;
         this.jowiService = jowiService;
-        this.productWithCountService = productWithCountService;
+        this.pwcService = pwcService;
         this.lf = lf;
         this.tu = tu;
+        this.appProperties = appProperties;
     }
 
     @Override
@@ -91,7 +94,7 @@ class OrderMainMessageState implements MessageState {
             Restaurant restaurant = restaurantService.findByOrderId(order.getId());
             List<Category> categories = jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId(), bot, telegramUser);
             if (categories.isEmpty()) { // it can be empty if someone modified on server
-                int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
+                int basketItemsNum = pwcService.getBasketItemsCount(order.getId());
                 ToOrderMainHandler.builder()
                         .service(userService)
                         .bot(bot)
@@ -142,9 +145,7 @@ class OrderMainMessageState implements MessageState {
 
     private void handleCategory(TelegramLongPollingBot bot, TelegramUser telegramUser,
                                 ResourceBundle rb, Category category, Order order) {
-
         List<Product> products = productService.getAllByCategoryId(category.getId());
-
         ToCategoryMainHandler.builder()
                 .bot(bot)
                 .userService(userService)
@@ -160,15 +161,17 @@ class OrderMainMessageState implements MessageState {
         orderService.save(order);
     }
 
-
     private void handleOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         StringBuilder text = new StringBuilder(rb.getString("your-order")).append("\n");
-        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
+        List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
         if (products.isEmpty()) {
             DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
-        tu.appendProducts(text, products, rb);
+        int productsPrice = orderService.getProductsPrice(order.getId());
+        order.setDeliveryPrice(productsPrice >= appProperties.getFreeDeliveryLowerBound() ? 0 : appProperties.getDeliveryPrice());
+        orderService.save(order);
+        tu.appendProducts(text, products, rb, true, order.getDeliveryPrice());
         SendMessage sendMessage1 = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(text.toString());
@@ -210,12 +213,12 @@ class OrderMainMessageState implements MessageState {
     }
 
     private void handleBasket(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
+        List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
         if (products.isEmpty()) {
             handleEmptyBasket(bot, telegramUser, rb);
             return;
         }
-        String text = tu.appendProducts(new StringBuilder(), products, rb).toString();
+        String text = tu.appendProducts(new StringBuilder(), products, rb, false, -1).toString();
         SendMessage sendMessage = new SendMessage()
                 .setText(text)
                 .setChatId(telegramUser.getChatId());

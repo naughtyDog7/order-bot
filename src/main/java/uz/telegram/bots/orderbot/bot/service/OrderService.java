@@ -17,4 +17,6 @@ public interface OrderService {
     void deleteOrder(Order order);
 
     List<Order> findActiveForRestaurant(Restaurant restaurant);
+
+    int getProductsPrice(long id);
 }

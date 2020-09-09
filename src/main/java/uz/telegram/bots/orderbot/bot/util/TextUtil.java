@@ -36,16 +36,17 @@ public class TextUtil {
     public static final List<String> MEAL_EMOJIS = List.of("\uD83E\uDD57"/*🥗*/, "\uD83E\uDD58"/*🥘*/, "\uD83C\uDF5C"/*🍜*/,
             "\uD83C\uDF5D"/*🍝*/, "\uD83C\uDF72"/*🍲*/, "\uD83C\uDF5B"/*🍛*/, "\uD83C\uDF71"/*🍱*/, "\uD83E\uDD5F"/*🥟*/, "\uD83C\uDF5A" /*🍚*/,
             "\uD83E\uDD59"/*🥙*/, "\uD83C\uDF75"/*🍵*/, "☕"/*☕*/);
+
     public static String getRandMealEmoji() {
         return MEAL_EMOJIS.get(ThreadLocalRandom.current().nextInt(MEAL_EMOJIS.size()));
     }
 
-    public StringBuilder appendProducts(StringBuilder initial, List<ProductWithCount> products, ResourceBundle rb) {
+    public StringBuilder appendProducts(StringBuilder initial, List<ProductWithCount> products, ResourceBundle rb, boolean withDelivery, int deliveryPrice) {
         long totalSum = 0L;
         for (ProductWithCount productWithCount : products) {
             Product product = productService.fromProductWithCount(productWithCount.getId());
             String appendToCount = rb.getString("count-append");
-            long priceForProduct = product.getPrice() * (long)productWithCount.getCount();
+            long priceForProduct = product.getPrice() * (long) productWithCount.getCount();
             totalSum += priceForProduct;
             initial.append("\n")
                     .append(product.getName())
@@ -59,6 +60,19 @@ public class TextUtil {
                     .append(" ")
                     .append(rb.getString("uzs-text"));
         }
+        if (withDelivery) {
+            initial.append("\n")
+                    .append(rb.getString("delivery"))
+                    .append(": ");
+            if (deliveryPrice == 0)
+                initial.append(rb.getString("free"));
+            else
+                initial.append(deliveryPrice)
+                        .append(" ")
+                        .append(rb.getString("uzs-text"));
+            totalSum += deliveryPrice;
+        }
+
         initial.append("\n\n")
                 .append(rb.getString("total"))
                 .append(": ==> ")
@@ -91,10 +105,11 @@ public class TextUtil {
     }
 
     private static final ZoneId TASHKENT_ZONE_ID = ZoneId.of("GMT+5");
+
     public void appendRestaurants(StringBuilder text, List<Restaurant> restaurants, ResourceBundle rb) {
         List<Restaurant> restaurantsCopy = new ArrayList<>(restaurants);
         LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
-        restaurantsCopy.sort(((Comparator<Restaurant>)(f, s) ->
+        restaurantsCopy.sort(((Comparator<Restaurant>) (f, s) ->
                 Boolean.compare(restaurantService.isOpened(curTime, f), restaurantService.isOpened(curTime, s))).reversed());
         for (int i = 0; i < restaurantsCopy.size(); i++) {
             Restaurant restaurant = restaurantsCopy.get(i);

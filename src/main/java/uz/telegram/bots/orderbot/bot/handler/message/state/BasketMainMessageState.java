@@ -102,7 +102,7 @@ class BasketMainMessageState implements MessageState {
                 .setChatId(telegramUser.getChatId());
         List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
 
-        String text = tu.appendProducts(new StringBuilder(), products, rb).toString();
+        String text = tu.appendProducts(new StringBuilder(), products, rb, false, -1).toString();
         SendMessage sendMessage2 = new SendMessage()
                 .setText(text)
                 .setChatId(telegramUser.getChatId());

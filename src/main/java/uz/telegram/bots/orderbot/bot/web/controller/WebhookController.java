@@ -108,7 +108,7 @@ public class WebhookController {
                     handleSent(telegramUser, rb);
                     break;
                 case DELIVERED:
-                    handleDelivered();
+                    handleDelivered(order);
                     break;
             }
         } finally {
@@ -176,6 +176,7 @@ public class WebhookController {
             Product product = productService.fromProductWithCount(pwc.getId());
             prices.add(new LabeledPrice(product.getName() + "*" + pwc.getCount(), product.getPrice() * 100 * pwc.getCount()));
         }
+        prices.add(new LabeledPrice(rb.getString("delivery"), order.getDeliveryPrice()));
         return new SendInvoice()
                 .setChatId(Math.toIntExact(telegramUser.getChatId()))
                 .setTitle(rb.getString("bill-title"))
@@ -188,8 +189,8 @@ public class WebhookController {
                         .orElseThrow(() -> new AssertionError("payment token not provided for method = " + paymentMethod)));
     }
 
-    private void handleDelivered() {
-        log.info("order delivered");
+    private void handleDelivered(Order order) {
+        orderService.deleteOrder(order);
     }
 
     private void handleSent(TelegramUser telegramUser, ResourceBundle rb) {

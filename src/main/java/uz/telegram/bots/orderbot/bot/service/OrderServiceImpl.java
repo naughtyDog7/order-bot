@@ -78,4 +78,9 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> findActiveForRestaurant(Restaurant restaurant) {
         return orderRepository.findAllByStateAndRestaurantStringId(ACTIVE, restaurant.getRestaurantId());
     }
+
+    @Override
+    public int getProductsPrice(long id) {
+        return orderRepository.getProductsPrice(id);
+    }
 }

@@ -7,7 +7,6 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Objects;
-import java.util.StringJoiner;
 
 @Entity
 @Table(name = "location")
@@ -43,9 +42,6 @@ public class TelegramLocation {
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", "[", "]")
-                .add("latitude=" + latitude)
-                .add("longitude=" + longitude)
-                .toString();
+        return latitude + "," + longitude;
     }
 }

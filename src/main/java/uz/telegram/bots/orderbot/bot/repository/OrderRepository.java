@@ -25,4 +25,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "JOIN pwc.order o " +
             "WHERE pwc.id = :pwcId")
     Order findByProductWithCountId(long pwcId);
+
+    @Query("SELECT sum(pwc.count * p.price) FROM Order o " +
+            "JOIN o.products pwc " +
+            "JOIN pwc.product p " +
+            "WHERE o.id = :orderId")
+    int getProductsPrice(long orderId);
 }

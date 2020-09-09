@@ -86,7 +86,7 @@ class LocationSendState implements MessageState {
 
         StringBuilder curOrderText = new StringBuilder(rb.getString("your-order")).append("\n");
         List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
-        tu.appendProducts(curOrderText, products, rb);
+        tu.appendProducts(curOrderText, products, rb, true, order.getDeliveryPrice());
         tu.appendPhoneNum(curOrderText, telegramUser.getPhoneNum(), rb);
         tu.appendNoNameLocation(curOrderText, rb);
         SendMessage sendMessage1 = new SendMessage()

@@ -276,10 +276,8 @@ public class JowiServiceImpl implements JowiService {
         orderDto.setCourses(products.stream()
                 .map(pwc -> CourseDto.fromProductWithCount(pwc, productService))
                 .collect(Collectors.toList()));
-        long amountOrder = 0;
-        for (ProductWithCount product : products) {
-            amountOrder += product.getCount() * (long) productService.fromProductWithCount(product.getId()).getPrice();
-        }
+        long amountOrder = orderService.getProductsPrice(order.getId()) + order.getDeliveryPrice();
+        orderDto.setDeliveryPrice(order.getDeliveryPrice());
         orderDto.setAmountOrder(amountOrder);
 
         RequestEntity<OrderWrapper> requestEntity = RequestEntity.post(uriUtil.getOrderPostUri())

@@ -7,6 +7,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import uz.telegram.bots.orderbot.bot.handler.Handler;
 import uz.telegram.bots.orderbot.bot.handler.HandlerFactory;
+import uz.telegram.bots.orderbot.bot.properties.AppProperties;
 import uz.telegram.bots.orderbot.bot.properties.BotProperties;
 import uz.telegram.bots.orderbot.bot.properties.JowiProperties;
 import uz.telegram.bots.orderbot.bot.properties.PaymentProperties;
@@ -17,7 +18,7 @@ import java.util.concurrent.Executors;
 
 
 @Component
-@EnableConfigurationProperties({BotProperties.class, JowiProperties.class, PaymentProperties.class})
+@EnableConfigurationProperties({BotProperties.class, JowiProperties.class, PaymentProperties.class, AppProperties.class})
 public class OrderBot extends TelegramLongPollingBot {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new ThreadFactoryImpl());

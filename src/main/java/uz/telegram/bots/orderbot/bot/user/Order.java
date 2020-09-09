@@ -31,6 +31,7 @@ public class Order {
             fetch = FetchType.LAZY, orphanRemoval = true)
     private final List<ProductWithCount> products = new ArrayList<>();
 
+    private int deliveryPrice;
     private double finalPrice;
 
     private String lastChosenCategoryName;

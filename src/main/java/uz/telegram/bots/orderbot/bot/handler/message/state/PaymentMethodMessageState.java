@@ -103,7 +103,7 @@ class PaymentMethodMessageState implements MessageState {
 
         StringBuilder messageText = new StringBuilder(rb.getString("confirm-before-send-to-server")).append("\n");
         List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
-        tu.appendProducts(messageText, products, rb);
+        tu.appendProducts(messageText, products, rb, true, order.getDeliveryPrice());
         tu.appendPhoneNum(messageText, telegramUser.getPhoneNum(), rb);
         tu.appendNoNameLocation(messageText, rb);
         tu.appendPaymentMethod(messageText, paymentInfo.getPaymentMethod(), rb);
