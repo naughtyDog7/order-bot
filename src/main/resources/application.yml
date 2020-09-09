@@ -1,3 +1,7 @@
+app:
+  basket-count-limit: 100
+  free-delivery-lower-bound: 100000
+  delivery-price: 8000
 bot:
   bot-token: ${BOT_TOKEN}
   username: "blueBankz_bot"

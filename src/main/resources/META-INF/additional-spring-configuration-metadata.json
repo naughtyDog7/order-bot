@@ -24,5 +24,20 @@
       "name": "payment.payme-token",
       "type": "java.lang.String",
       "description": "Payme provider token that can be receiver from @BotFather."
+    },
+    {
+      "name": "app.basket-count-limit",
+      "type": "java.lang.Integer",
+      "description": "Max count limit for each item in basket."
+    },
+    {
+      "name": "app.free-delivery-lower-bound",
+      "type": "java.lang.Integer",
+      "description": "Lower bound order price for free delivery."
+    },
+    {
+      "name": "app.delivery-price",
+      "type": "java.lang.Integer",
+      "description": "Fixed delivery price."
     }
   ] }

@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import uz.telegram.bots.orderbot.bot.properties.AppProperties;
 import uz.telegram.bots.orderbot.bot.service.*;
 import uz.telegram.bots.orderbot.bot.user.*;
 import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
@@ -26,28 +27,31 @@ class ProductNumChooseState implements MessageState {
     private final TelegramUserService userService;
     private final OrderService orderService;
     private final ProductService productService;
-    private final ProductWithCountService productWithCountService;
+    private final ProductWithCountService pwcService;
     private final RestaurantService restaurantService;
     private final CategoryService categoryService;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final LockFactory lf;
+    private final AppProperties appProperties;
 
     @Autowired
     ProductNumChooseState(ResourceBundleFactory rbf, TelegramUserService userService,
                           OrderService orderService, ProductService productService,
-                          ProductWithCountService productWithCountService, RestaurantService restaurantService,
-                          CategoryService categoryService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
+                          ProductWithCountService pwcService, RestaurantService restaurantService,
+                          CategoryService categoryService, KeyboardFactory kf,
+                          KeyboardUtil ku, LockFactory lf, AppProperties appProperties) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
         this.productService = productService;
-        this.productWithCountService = productWithCountService;
+        this.pwcService = pwcService;
         this.restaurantService = restaurantService;
         this.categoryService = categoryService;
         this.kf = kf;
         this.ku = ku;
         this.lf = lf;
+        this.appProperties = appProperties;
     }
 
     @Override
@@ -74,21 +78,19 @@ class ProductNumChooseState implements MessageState {
                 handleBack(bot, telegramUser, rb, order);
                 return;
             }
-
-            int numChosen;
+            int numOfProductInBasket = pwcService.findByOrderIdAndProductId(order.getId(), product.getId())
+                    .map(ProductWithCount::getCount)
+                    .orElse(0);
             try {
-                numChosen = Integer.parseInt(text);
-                if (numChosen <= 0) {
+                int numChosen = Integer.parseInt(text);
+                if (numChosen <= 0 || numChosen + numOfProductInBasket > appProperties.getBasketCountLimit()) {
                     handleIncorrectNum(bot, telegramUser, rb, restaurant, product, order);
-                    return;
+                } else {
+                    handleNumChosen(bot, telegramUser, rb, restaurant, product, order, numChosen);
                 }
             } catch (NumberFormatException e) {
                 handleIncorrectNum(bot, telegramUser, rb, restaurant, product, order);
-                return;
             }
-
-
-            handleNumChosen(bot, telegramUser, rb, restaurant, product, order, numChosen);
         } finally {
             lock.unlock();
         }
@@ -111,7 +113,7 @@ class ProductNumChooseState implements MessageState {
         productService.save(product);
 
         ProductWithCount productWithCount;
-        Optional<ProductWithCount> optProductWithCount = productWithCountService.findByOrderIdAndProductId(order.getId(), product.getId());
+        Optional<ProductWithCount> optProductWithCount = pwcService.findByOrderIdAndProductId(order.getId(), product.getId());
         if (optProductWithCount.isPresent()) {
             productWithCount = optProductWithCount.get();
             productWithCount.setCount(productWithCount.getCount() + numChosen);
@@ -119,9 +121,9 @@ class ProductNumChooseState implements MessageState {
             productWithCount = ProductWithCount.fromOrder(order, product, numChosen);
         }
 
-        productWithCountService.save(productWithCount);
+        pwcService.save(productWithCount);
         List<Category> categories = categoryService.findNonEmptyByRestaurantStringId(restaurant.getRestaurantId());
-        int basketNumItems = productWithCountService.getBasketItemsCount(order.getId());
+        int basketNumItems = pwcService.getBasketItemsCount(order.getId());
         ToOrderMainHandler.builder()
                 .bot(bot)
                 .telegramUser(telegramUser)
