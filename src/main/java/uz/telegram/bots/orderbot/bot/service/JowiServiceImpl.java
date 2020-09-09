@@ -188,7 +188,7 @@ public class JowiServiceImpl implements JowiService {
         product.setProductId(productDto.getId());
         product.setName(productDto.getTitle());
         product.setCountLeft((int) Math.round(productDto.getCountLeft()));
-        product.setPrice((int) Math.round(productDto.getPrice()));
+        product.setPrice((int) Math.round(productDto.getPriceForOnlineOrder()));
         product.setImageUrl(productDto.getImageUrl());
         return productService.save(product);
     }

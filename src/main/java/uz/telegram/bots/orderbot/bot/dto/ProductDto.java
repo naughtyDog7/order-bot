@@ -13,7 +13,6 @@ import lombok.ToString;
 public class ProductDto {
     private String id;
     private String title;
-    private double price;
     @JsonProperty("image_url")
     private String imageUrl;
 
