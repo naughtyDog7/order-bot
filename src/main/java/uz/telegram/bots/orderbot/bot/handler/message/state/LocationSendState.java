@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
 
-import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PAYMENT_METHOD_CHOOSE;
+import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.FINAL_CONFIRMATION_KEYBOARD;
 
 @Component
 class LocationSendState implements MessageState {
@@ -82,6 +82,41 @@ class LocationSendState implements MessageState {
         TelegramLocation tLocation = TelegramLocation.of(location.getLatitude(), location.getLongitude());
         PaymentInfo paymentInfo = paymentInfoService.findByOrderId(order.getId());
         paymentInfo.setOrderLocation(tLocation);
+        paymentInfo.setPaymentMethod(PaymentInfo.PaymentMethod.CASH); //Set method to cash because no other available for now
+        paymentInfoService.save(paymentInfo);
+
+        StringBuilder messageText = new StringBuilder(rb.getString("confirm-before-send-to-server")).append("\n");
+        List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
+        tu.appendProducts(messageText, products, rb, true, order.getDeliveryPrice());
+        tu.appendPhoneNum(messageText, telegramUser.getPhoneNum(), rb);
+        tu.appendNoNameLocation(messageText, rb);
+        tu.appendPaymentMethod(messageText, paymentInfo.getPaymentMethod(), rb);
+
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(messageText.toString());
+        setConfirmOrderKeyboard(sendMessage, telegramUser.getLangISO());
+        try {
+            bot.execute(sendMessage);
+            telegramUser.setCurState(TelegramUser.UserState.FINAL_CONFIRMATION);
+            userService.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setConfirmOrderKeyboard(SendMessage sendMessage, String langISO) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(FINAL_CONFIRMATION_KEYBOARD, langISO);
+        keyboard = ku.addBackButtonLast(keyboard, langISO);
+        sendMessage.setReplyMarkup(ku.concatLastTwoRows(keyboard)
+                .setResizeKeyboard(true));
+    }
+
+    //Temp disabling payment method choosing
+    /*private void handleLocation(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Location location) {
+        TelegramLocation tLocation = TelegramLocation.of(location.getLatitude(), location.getLongitude());
+        PaymentInfo paymentInfo = paymentInfoService.findByOrderId(order.getId());
+        paymentInfo.setOrderLocation(tLocation);
         paymentInfoService.save(paymentInfo);
 
         StringBuilder curOrderText = new StringBuilder(rb.getString("your-order")).append("\n");
@@ -110,7 +145,7 @@ class LocationSendState implements MessageState {
         ReplyKeyboardMarkup keyboard = kf.getKeyboard(PAYMENT_METHOD_CHOOSE, langISO);
         sendMessage.setReplyMarkup(ku.addBackButtonLast(keyboard, langISO)
                 .setResizeKeyboard(true));
-    }
+    }*/
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         List<Category> categories = categoryService.findNonEmptyByOrderId(order.getId());
