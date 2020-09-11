@@ -127,7 +127,6 @@ class MainMenuMessageState implements MessageState {
                 CompletableFuture<List<Restaurant>> future = CompletableFuture.supplyAsync(() -> {
                     try {
                         return jowiService.updateAndFetchRestaurants();
-                        // TODO change id to chosen by user restaurant id
                     } catch (IOException e) {
                         JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
                         throw new UncheckedIOException(e);

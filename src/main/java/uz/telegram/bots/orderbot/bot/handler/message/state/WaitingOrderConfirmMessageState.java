@@ -64,9 +64,9 @@ class WaitingOrderConfirmMessageState implements MessageState {
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (text.equals(btnCheckStatus)) {
                 handleCheckStatus(bot, telegramUser, rb, order);
-            } else if (text.equals(btnCancelOrder)) {
+            } /*else if (text.equals(btnCancelOrder)) {
                 handleCancelOrder(bot, telegramUser, rb, order);
-            } else {
+            }*/ else {
                 DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             }
         } finally {
