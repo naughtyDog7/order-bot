@@ -19,7 +19,6 @@ import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
@@ -100,10 +99,10 @@ class WaitingOrderConfirmMessageState implements MessageState {
     private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
 
     private void handleCheckStatus(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        if (LocalDateTime.now(tashkentZoneId).minusMinutes(5).isAfter(order.getRequestSendTime())) {
+        /*if (LocalDateTime.now(tashkentZoneId).minusMinutes(5).isAfter(order.getRequestSendTime())) {
             // if passed more than 5 minutes but still at this state, no one accepted order, so cancel it
             handleTimeIsUp(bot, telegramUser, rb, order);
-        } else {
+        } else {*/
             SendMessage sendMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("waiting-for-order-confirm-message"));
@@ -112,7 +111,7 @@ class WaitingOrderConfirmMessageState implements MessageState {
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
-        }
+//        }
     }
 
     private void handleTimeIsUp(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
