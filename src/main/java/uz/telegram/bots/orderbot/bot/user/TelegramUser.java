@@ -33,6 +33,7 @@ public class TelegramUser {
     private String phoneNum;
     private String langISO = ""; //default lang iso for getting default ResourceBundle from ResourceBundleFactory
     private boolean receiveComments = false;
+    @Enumerated(EnumType.STRING)
     private UserState curState = UserState.PRE_GREETING; //default to first User state
 
 
