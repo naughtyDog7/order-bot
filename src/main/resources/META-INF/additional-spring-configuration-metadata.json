@@ -39,5 +39,10 @@
       "name": "app.delivery-price",
       "type": "java.lang.Integer",
       "description": "Fixed delivery price."
+    },
+    {
+      "name": "app.security.admin-pass",
+      "type": "java.lang.String",
+      "description": "Password to authenticate with admin role."
     }
   ] }

@@ -2,6 +2,8 @@ app:
   basket-count-limit: 100
   free-delivery-lower-bound: 100000
   delivery-price: 8000
+  security:
+    admin-pass: ${BOT_ADMIN_PASS}
 bot:
   bot-token: ${BOT_TOKEN}
   username: "blueBankz_bot"
@@ -26,6 +28,14 @@ spring:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 server:
   port: ${PORT}
+logging:
+  file:
+    name: app-log.log
+management:
+  endpoints:
+    web:
+      exposure:
+        include: logfile
 ---
 spring:
   profiles: dev
@@ -34,9 +44,11 @@ spring:
     username: sa
     driver-class-name: org.h2.Driver
     password: sa
-
   jpa:
     hibernate:
       ddl-auto: create
     properties:
       hibernate.dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
