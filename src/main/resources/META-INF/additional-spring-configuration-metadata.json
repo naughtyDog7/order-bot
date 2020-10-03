@@ -28,7 +28,7 @@
     {
       "name": "app.basket-count-limit",
       "type": "java.lang.Integer",
-      "description": "Max count limit for each item in basket."
+      "description": "Maximum number of one item that can be put in basket."
     },
     {
       "name": "app.free-delivery-lower-bound",

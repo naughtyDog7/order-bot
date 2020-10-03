@@ -2,10 +2,12 @@ package uz.telegram.bots.orderbot.bot.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendInvoice;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -71,12 +73,12 @@ public class WebhookController {
     public String proceedWebhook(@RequestBody WebhookOrderWrapperDto orderWrapper) {
         if (orderWrapper.getStatus() != 1) {
             log.error("Received webhook with other than 1 status, orderWrapperDto " + orderWrapper);
-            return null;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status was not 1");
         }
         WebhookOrderDto orderDto = orderWrapper.getData();
         if (orderDto == null) {
             log.error("Received null orderDto, orderWrapperDto = " + orderWrapper);
-            return null;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order was empty");
         }
         proceedOrderUpdate(orderDto);
         return "OK";
