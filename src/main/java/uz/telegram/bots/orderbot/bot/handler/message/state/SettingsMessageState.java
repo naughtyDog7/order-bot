@@ -27,21 +27,24 @@ class SettingsMessageState implements MessageState {
     private final TelegramUserService service;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
-    SettingsMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf, KeyboardUtil ku) {
+    SettingsMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf, KeyboardUtil ku, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.service = service;
         this.kf = kf;
         this.ku = ku;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
+    //can come as change lang, save num, change num, and back button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -59,7 +62,7 @@ class SettingsMessageState implements MessageState {
         } else if (messageText.equals(back)) {
             handleBack(bot, telegramUser, rb);
         } else {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
         }
     }
 

@@ -3,11 +3,13 @@ package uz.telegram.bots.orderbot.bot.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import uz.telegram.bots.orderbot.bot.service.ProductService;
 import uz.telegram.bots.orderbot.bot.user.ProductWithCount;
 
 @Getter
 @Setter
+@ToString
 public class CourseDto {
     private int count;
     @JsonProperty("course_id")

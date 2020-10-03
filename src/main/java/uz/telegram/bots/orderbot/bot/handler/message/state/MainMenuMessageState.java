@@ -46,11 +46,13 @@ class MainMenuMessageState implements MessageState {
     private final OrderService orderService;
     private final LockFactory lf;
     private final TextUtil tu;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     MainMenuMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                          RestaurantService restaurantService, KeyboardFactory kf, KeyboardUtil ku,
-                         JowiService jowiService, OrderService orderService, LockFactory lf, TextUtil tu) {
+                         JowiService jowiService, OrderService orderService, LockFactory lf,
+                         TextUtil tu, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.restaurantService = restaurantService;
@@ -60,15 +62,16 @@ class MainMenuMessageState implements MessageState {
         this.orderService = orderService;
         this.lf = lf;
         this.tu = tu;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
-    //Message to this state can come as Order, Settings, Contact Us
+    //can come as Order, Settings, Contact Us
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -85,7 +88,7 @@ class MainMenuMessageState implements MessageState {
         else if (messageText.equals(contactUs))
             handleContactUs(bot, telegramUser, rb);
         else
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
     }
 
     private void handleSettings(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

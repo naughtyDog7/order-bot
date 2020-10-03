@@ -32,8 +32,6 @@ public class PaymentInfo {
     public String toString() {
         return new StringJoiner(", ", PaymentInfo.class.getSimpleName() + "[", "]")
                 .add("id=" + id)
-                .add("orderLocation=" + orderLocation)
-                .add("fromRestaurant=" + fromRestaurant.getRestaurantTitle())
                 .toString();
     }
 

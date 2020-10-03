@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -16,6 +17,7 @@ import java.util.ResourceBundle;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.LANG_KEYBOARD;
 
 @Component
+@Slf4j
 class PreGreetingMessageState implements MessageState {
 
     private final ResourceBundleFactory rbf;
@@ -30,7 +32,9 @@ class PreGreetingMessageState implements MessageState {
     }
 
     @Override
+    //input ignored, but usually is '/start'
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
+        log.info("New user registered: " + telegramUser);
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         SendMessage sendMessage1 = new SendMessage()
                 .setChatId(telegramUser.getChatId())

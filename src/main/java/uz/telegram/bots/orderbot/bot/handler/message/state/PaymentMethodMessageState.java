@@ -32,12 +32,13 @@ class PaymentMethodMessageState implements MessageState {
     private final KeyboardUtil ku;
     private final TextUtil tu;
     private final LockFactory lf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     PaymentMethodMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                               CategoryService categoryService, OrderService orderService,
                               ProductWithCountService pwcService, PaymentInfoService paymentInfoService,
-                              KeyboardFactory kf, KeyboardUtil ku, TextUtil tu, LockFactory lf) {
+                              KeyboardFactory kf, KeyboardUtil ku, TextUtil tu, LockFactory lf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.categoryService = categoryService;
@@ -48,14 +49,16 @@ class PaymentMethodMessageState implements MessageState {
         this.ku = ku;
         this.tu = tu;
         this.lf = lf;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
+    //can come as payment method or button back
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String text = message.getText();
@@ -93,7 +96,7 @@ class PaymentMethodMessageState implements MessageState {
             paymentInfo.setPaymentMethod(PAYME);
             chosenMethod = btnPayme;
         } else {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         paymentInfo = paymentInfoService.save(paymentInfo);

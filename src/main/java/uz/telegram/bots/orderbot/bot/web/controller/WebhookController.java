@@ -97,6 +97,7 @@ public class WebhookController {
             lock.lock();
             ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
             WebhookOrderStatus status = orderDto.getStatus();
+            log.info("Order with id " + orderDto.getOrderId() + " received webhook with status " + orderDto.getStatus());
             switch (status) {
                 case ACCEPTED:
                     handleAccepted(telegramUser, order, rb);

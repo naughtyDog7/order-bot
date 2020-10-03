@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -19,12 +20,11 @@ import uz.telegram.bots.orderbot.bot.util.LockFactory;
 import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
 
 @Component
+@Slf4j
 class SettingsPhoneNumState implements MessageState {
     private final ResourceBundleFactory rbf;
     private final TelegramUserService userService;
@@ -34,11 +34,13 @@ class SettingsPhoneNumState implements MessageState {
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final LockFactory lf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     SettingsPhoneNumState(ResourceBundleFactory rbf, TelegramUserService userService,
                           OrderService orderService, CategoryService categoryService,
-                          ProductWithCountService pwcService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
+                          ProductWithCountService pwcService, KeyboardFactory kf, KeyboardUtil ku,
+                          LockFactory lf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
@@ -47,9 +49,8 @@ class SettingsPhoneNumState implements MessageState {
         this.kf = kf;
         this.ku = ku;
         this.lf = lf;
+        this.badRequestHandler = badRequestHandler;
     }
-
-    private static final Pattern PHONE_NUM_PATTERN = Pattern.compile("^(?:\\+?998)?[ -]?(\\d{2})[ -]?(\\d{3})[ -]?(\\d{2})[ -]?(\\d{2})$");
 
     @Override
     //can come as contact, back button, confirm button, and change button
@@ -68,24 +69,22 @@ class SettingsPhoneNumState implements MessageState {
             String phoneNum = contact.getPhoneNumber();
             handlePhoneNum(bot, telegramUser, rb, phoneNum);
         } else {
-            DefaultBadRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
         }
     }
 
     private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
-        Matcher m = PHONE_NUM_PATTERN.matcher(phoneNum);
-        String cleanedPhoneNum;
-        if (m.matches()) {
-            cleanedPhoneNum = m.group(1) + "-" + m.group(2) + "-" + m.group(3) + "-" + m.group(4);
-        } else {
-            DefaultBadRequestHandler.handleBadPhoneNumber(bot, telegramUser, rb);
+        try {
+            userService.checkAndSetPhoneNum(telegramUser, phoneNum);
+            log.info("Phone num updated, telegram user " + telegramUser);
+        } catch (IllegalArgumentException e) {
+            badRequestHandler.handleBadPhoneNumber(bot, telegramUser, rb);
             return;
         }
         SendMessage sendMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("phone-set-success"));
         ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, true);
-        telegramUser.setPhoneNum(cleanedPhoneNum);
         userService.save(telegramUser);
 
         try {

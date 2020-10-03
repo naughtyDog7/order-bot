@@ -41,13 +41,14 @@ class OrderMainMessageState implements MessageState {
     private final LockFactory lf;
     private final TextUtil tu;
     private final AppProperties appProperties;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     OrderMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                           KeyboardFactory kf, KeyboardUtil ku, CategoryService categoryService,
                           OrderService orderService, RestaurantService restaurantService,
                           ProductService productService, JowiService jowiService, ProductWithCountService pwcService,
-                          LockFactory lf, TextUtil tu, AppProperties appProperties) {
+                          LockFactory lf, TextUtil tu, AppProperties appProperties, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.kf = kf;
@@ -61,6 +62,7 @@ class OrderMainMessageState implements MessageState {
         this.lf = lf;
         this.tu = tu;
         this.appProperties = appProperties;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -69,7 +71,7 @@ class OrderMainMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -112,7 +114,7 @@ class OrderMainMessageState implements MessageState {
                 handleCategory(bot, telegramUser, rb,
                         categories.get(index), order);
             else
-                DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+                badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
         } catch (IOException e) {
             JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
             throw new UncheckedIOException(e);
@@ -165,7 +167,7 @@ class OrderMainMessageState implements MessageState {
         StringBuilder text = new StringBuilder(rb.getString("your-order")).append("\n");
         List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
         if (products.isEmpty()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         int productsPrice = orderService.getProductsPrice(order.getId());

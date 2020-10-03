@@ -3,9 +3,11 @@ package uz.telegram.bots.orderbot.bot.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
+@ToString
 public class OrderWrapper {
     @JsonProperty("api_key")
     private String apiKey;

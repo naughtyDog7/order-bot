@@ -1,11 +1,10 @@
 package uz.telegram.bots.orderbot.bot.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.TypeRef;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +29,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static uz.telegram.bots.orderbot.bot.dto.OrderDto.OrderType.DELIVERY;
 
 @Service
+@Slf4j
 public class JowiServiceImpl implements JowiService {
 
     private final UriUtil uriUtil;
@@ -77,7 +77,7 @@ public class JowiServiceImpl implements JowiService {
      * This method is used to fetch categories for specific restaurant from JOWI api
      *
      * @param restaurantId restaurant id which can be taken from JOWI api
-     * @param bot telegram bot used to send message in case of deleting product which was in someone's basket
+     * @param bot          telegram bot used to send message in case of deleting product which was in someone's basket
      * @param telegramUser
      * @return loaded categories
      * @throws IllegalStateException if incorrect or invalid response received
@@ -91,11 +91,9 @@ public class JowiServiceImpl implements JowiService {
                 .build();
 
         ResponseEntity<String> jsonResponse = restTemplate.exchange(requestEntity, String.class);
-        if (jsonResponse.getStatusCodeValue() == HttpStatus.NOT_MODIFIED.value()) {
+        if (jsonResponse.getStatusCodeValue() == HttpStatus.NOT_MODIFIED.value())
             return categoryService.findNonEmptyByRestaurantStringId(restaurantId);
-
-
-        } else if (jsonResponse.getStatusCodeValue() == HttpStatus.OK.value()) {
+        if (jsonResponse.getStatusCodeValue() == HttpStatus.OK.value()) {
             restaurantIdEtags.put(restaurantId, jsonResponse.getHeaders().getETag());
             DocumentContext context = JsonPath.parse(jsonResponse.getBody());
             if (context.read("$.status", Integer.class) != 1)
@@ -283,11 +281,8 @@ public class JowiServiceImpl implements JowiService {
         RequestEntity<OrderWrapper> requestEntity = RequestEntity.post(uriUtil.getOrderPostUri())
                 .contentType(APPLICATION_JSON)
                 .body(orderWrapper);
-        try {
-            System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(orderWrapper));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
+
+        log.info("Attempting to send order to server: " + orderDto);
 
         ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
         String jsonResponse = response.getBody();

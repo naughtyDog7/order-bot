@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -7,8 +8,9 @@ import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 
 import java.util.ResourceBundle;
 
-public class DefaultBadRequestHandler {
-    public static void handleTextBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
+@Component
+public class BadRequestHandlerImpl implements BadRequestHandler {
+    public void handleTextBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("bad-request-message"));
@@ -19,7 +21,7 @@ public class DefaultBadRequestHandler {
         }
     }
 
-    public static void handleContactBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
+    public void handleContactBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("contact-bad-request-message"));
@@ -30,7 +32,7 @@ public class DefaultBadRequestHandler {
         }
     }
 
-    public static void handleLocationBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
+    public void handleLocationBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("location-bad-request-message"));
@@ -41,7 +43,7 @@ public class DefaultBadRequestHandler {
         }
     }
 
-    public static void handleRestaurantClosed(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+    public void handleRestaurantClosed(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setText(rb.getString("restaurant-currently-closed"))
                 .setChatId(telegramUser.getChatId());
@@ -52,7 +54,7 @@ public class DefaultBadRequestHandler {
         }
     }
 
-    public static void handleBadPhoneNumber(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+    public void handleBadPhoneNumber(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
         SendMessage sendMessage = new SendMessage()
                 .setText(rb.getString("enter-phone-num-in-format"))
                 .setChatId(telegramUser.getChatId());

@@ -29,13 +29,15 @@ class BasketMainMessageState implements MessageState {
     private final KeyboardFactory kf;
     private final LockFactory lf;
     private final TextUtil tu;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     BasketMainMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                            OrderService orderService, ProductService productService,
                            ProductWithCountService productWithCountService,
                            CategoryService categoryService,
-                           KeyboardUtil ku, KeyboardFactory kf, LockFactory lf, TextUtil tu) {
+                           KeyboardUtil ku, KeyboardFactory kf, LockFactory lf,
+                           TextUtil tu, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
@@ -46,6 +48,7 @@ class BasketMainMessageState implements MessageState {
         this.kf = kf;
         this.lf = lf;
         this.tu = tu;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -54,7 +57,7 @@ class BasketMainMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String btnBack = rb.getString("btn-back");
@@ -75,7 +78,7 @@ class BasketMainMessageState implements MessageState {
             Optional<ProductWithCount> optProduct = productWithCountService.findByOrderIdAndProductName(order.getId(), text);
             String finalProductName = text;
             optProduct.ifPresentOrElse(product -> handleItemDelete(bot, telegramUser, rb, order, product, finalProductName, basketNumItems),
-                    () -> DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+                    () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
         } finally {
             lock.unlock();
         }

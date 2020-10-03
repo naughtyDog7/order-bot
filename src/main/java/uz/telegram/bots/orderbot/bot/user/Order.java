@@ -48,9 +48,7 @@ public class Order {
     public String toString() {
         return "UserOrder{" +
                 "id=" + id +
-                ", products=" + products +
                 ", finalPrice=" + finalPrice +
-                ", paymentInfo=" + paymentInfo +
                 '}';
     }
 

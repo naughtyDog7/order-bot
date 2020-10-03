@@ -31,12 +31,13 @@ class LocationSendState implements MessageState {
     private final KeyboardUtil ku;
     private final TextUtil tu;
     private final LockFactory lf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     LocationSendState(ResourceBundleFactory rbf, TelegramUserService userService,
                       OrderService orderService, PaymentInfoService paymentInfoService,
                       CategoryService categoryService, ProductWithCountService pwcService,
-                      KeyboardFactory kf, KeyboardUtil ku, TextUtil tu, LockFactory lf) {
+                      KeyboardFactory kf, KeyboardUtil ku, TextUtil tu, LockFactory lf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
@@ -47,6 +48,7 @@ class LocationSendState implements MessageState {
         this.ku = ku;
         this.tu = tu;
         this.lf = lf;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -66,12 +68,12 @@ class LocationSendState implements MessageState {
                 if (text.equals(btnBack))
                     handleBack(bot, telegramUser, rb, order);
                 else
-                    DefaultBadRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
+                    badRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
             } else if (message.hasLocation()) {
                 Location location = message.getLocation();
                 handleLocation(bot, telegramUser, rb, order, location);
             } else {
-                DefaultBadRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
+                badRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
             }
         } finally {
             lock.unlock();

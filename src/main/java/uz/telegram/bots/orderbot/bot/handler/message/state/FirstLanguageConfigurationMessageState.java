@@ -22,12 +22,15 @@ class FirstLanguageConfigurationMessageState implements MessageState {
     private final ResourceBundleFactory rbf;
     private final TelegramUserService service;
     private final KeyboardFactory kf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
-    FirstLanguageConfigurationMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf) {
+    FirstLanguageConfigurationMessageState(ResourceBundleFactory rbf, TelegramUserService service,
+                                           KeyboardFactory kf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.service = service;
         this.kf = kf;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -35,7 +38,7 @@ class FirstLanguageConfigurationMessageState implements MessageState {
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rbf.getDefaultMessageBundle());
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rbf.getDefaultMessageBundle());
             return;
         }
 

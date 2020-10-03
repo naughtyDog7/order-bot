@@ -23,13 +23,16 @@ class LanguageConfigurationMessageState implements MessageState {
     private final TelegramUserService service;
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
-    LanguageConfigurationMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf, KeyboardUtil ku) {
+    LanguageConfigurationMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf,
+                                      KeyboardUtil ku, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.service = service;
         this.kf = kf;
         this.ku = ku;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -38,7 +41,7 @@ class LanguageConfigurationMessageState implements MessageState {
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
 
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -48,7 +51,7 @@ class LanguageConfigurationMessageState implements MessageState {
         else if (lang.equals(rb.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
         else {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String newLangISO = telegramUser.getLangISO();

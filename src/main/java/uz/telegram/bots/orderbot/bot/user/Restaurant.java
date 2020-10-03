@@ -61,7 +61,6 @@ public class Restaurant {
                 .add("location=" + location)
                 .add("onlineOrder=" + onlineOrder)
                 .add("deliveryPrice=" + deliveryPrice)
-                .add("categories=" + Category.getNames(categories))
                 .toString();
     }
 }

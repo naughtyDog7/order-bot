@@ -34,13 +34,14 @@ class ProductNumChooseState implements MessageState {
     private final KeyboardUtil ku;
     private final LockFactory lf;
     private final AppProperties appProperties;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     ProductNumChooseState(ResourceBundleFactory rbf, TelegramUserService userService,
                           OrderService orderService, ProductService productService,
                           ProductWithCountService pwcService, RestaurantService restaurantService,
                           CategoryService categoryService, KeyboardFactory kf,
-                          KeyboardUtil ku, LockFactory lf, AppProperties appProperties) {
+                          KeyboardUtil ku, LockFactory lf, AppProperties appProperties, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
@@ -52,6 +53,7 @@ class ProductNumChooseState implements MessageState {
         this.ku = ku;
         this.lf = lf;
         this.appProperties = appProperties;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -60,7 +62,7 @@ class ProductNumChooseState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String text = message.getText();

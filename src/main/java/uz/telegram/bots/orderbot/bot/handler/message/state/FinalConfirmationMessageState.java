@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -26,6 +27,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
 
 @Component
+@Slf4j
 class FinalConfirmationMessageState implements MessageState {
 
     private final ResourceBundleFactory rbf;
@@ -38,12 +40,14 @@ class FinalConfirmationMessageState implements MessageState {
     private final KeyboardUtil ku;
     private final LockFactory lf;
     private final RestaurantService restaurantService;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     FinalConfirmationMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                   CategoryService categoryService, OrderService orderService,
                                   ProductWithCountService pwcService,
-                                  JowiService jowiService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf, RestaurantService restaurantService) {
+                                  JowiService jowiService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf,
+                                  RestaurantService restaurantService, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.categoryService = categoryService;
@@ -54,6 +58,7 @@ class FinalConfirmationMessageState implements MessageState {
         this.ku = ku;
         this.lf = lf;
         this.restaurantService = restaurantService;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -61,7 +66,7 @@ class FinalConfirmationMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String text = message.getText();
@@ -77,7 +82,7 @@ class FinalConfirmationMessageState implements MessageState {
             } else if (text.equals(btnConfirm)) {
                 handleConfirm(bot, telegramUser, rb, order);
             } else {
-                DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+                badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             }
         } finally {
             lock.unlock();
@@ -91,7 +96,7 @@ class FinalConfirmationMessageState implements MessageState {
             Restaurant restaurant = restaurantService.findByOrderId(order.getId());
             LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
             if (!restaurantService.isOpened(curTime, restaurant)) {
-                DefaultBadRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
+                badRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
                 orderService.deleteOrder(order);
                 ToMainMenuHandler.builder()
                         .bot(bot)
@@ -115,6 +120,7 @@ class FinalConfirmationMessageState implements MessageState {
                 userService.save(telegramUser);
             }
         } catch (IOException e) {
+            log.error("Couldn't send order to server");
             e.printStackTrace();
             JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
         } catch (TelegramApiException e) {

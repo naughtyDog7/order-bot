@@ -14,4 +14,5 @@ public interface TelegramUserService {
     <S extends TelegramUser> S save(S s);
 
     TelegramUser findByOrderId(long id);
+    void checkAndSetPhoneNum(TelegramUser telegramUser, String phoneNum);
 }

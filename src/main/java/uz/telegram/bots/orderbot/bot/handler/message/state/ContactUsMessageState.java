@@ -23,12 +23,15 @@ class ContactUsMessageState implements MessageState {
     private final ResourceBundleFactory rbf;
     private final TelegramUserService service;
     private final KeyboardFactory kf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
-    ContactUsMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf) {
+    ContactUsMessageState(ResourceBundleFactory rbf, TelegramUserService service,
+                          KeyboardFactory kf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.service = service;
         this.kf = kf;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -36,7 +39,7 @@ class ContactUsMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String text = message.getText();

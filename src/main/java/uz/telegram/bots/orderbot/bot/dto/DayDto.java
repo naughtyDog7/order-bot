@@ -3,12 +3,14 @@ package uz.telegram.bots.orderbot.bot.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import uz.telegram.bots.orderbot.bot.user.WorkingTime;
 
 import java.time.LocalTime;
 
 @Getter
 @Setter
+@ToString
 public class DayDto {
     @JsonProperty("day_code")
     private int dayCode;

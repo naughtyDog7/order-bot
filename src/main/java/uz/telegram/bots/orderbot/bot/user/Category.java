@@ -33,8 +33,6 @@ public class Category {
         return "Category{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", products=" + Product.productNames(products) +
-                ", restaurant=" + restaurant.getRestaurantTitle() +
                 '}';
     }
 

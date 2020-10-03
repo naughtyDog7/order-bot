@@ -33,16 +33,18 @@ class WaitingOrderConfirmMessageState implements MessageState {
     private final KeyboardFactory kf;
     private final LockFactory lf;
     private final JowiService jowiService;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     WaitingOrderConfirmMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
-                                    OrderService orderService, KeyboardFactory kf, LockFactory lf, JowiService jowiService) {
+                                    OrderService orderService, KeyboardFactory kf, LockFactory lf, JowiService jowiService, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.orderService = orderService;
         this.kf = kf;
         this.lf = lf;
         this.jowiService = jowiService;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -50,7 +52,7 @@ class WaitingOrderConfirmMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String text = message.getText();
@@ -66,7 +68,7 @@ class WaitingOrderConfirmMessageState implements MessageState {
             } /*else if (text.equals(btnCancelOrder)) {
                 handleCancelOrder(bot, telegramUser, rb, order);
             }*/ else {
-                DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+                badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             }
         } finally {
             lock.unlock();

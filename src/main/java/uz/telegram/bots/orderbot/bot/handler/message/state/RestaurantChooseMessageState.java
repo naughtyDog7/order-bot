@@ -42,11 +42,13 @@ class RestaurantChooseMessageState implements MessageState {
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final LockFactory lf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     RestaurantChooseMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                  RestaurantService restaurantService, CategoryService categoryService,
-                                 JowiService jowiService, OrderService orderService, KeyboardFactory kf, KeyboardUtil ku, LockFactory lf) {
+                                 JowiService jowiService, OrderService orderService, KeyboardFactory kf,
+                                 KeyboardUtil ku, LockFactory lf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.userService = userService;
         this.restaurantService = restaurantService;
@@ -56,14 +58,16 @@ class RestaurantChooseMessageState implements MessageState {
         this.kf = kf;
         this.ku = ku;
         this.lf = lf;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
+    //can come as restaurant name or back button
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
         String text = message.getText();
@@ -77,7 +81,7 @@ class RestaurantChooseMessageState implements MessageState {
                 lock.lock();
                 Optional<Restaurant> optRestaurant = restaurantService.findByTitle(text);
                 if (optRestaurant.isEmpty()) {
-                    DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+                    badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
                 } else {
                     handleRestaurant(bot, telegramUser, rb, optRestaurant.get());
                 }
@@ -103,7 +107,7 @@ class RestaurantChooseMessageState implements MessageState {
     private void handleRestaurant(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Restaurant restaurant) {
 
         if (!restaurantService.isOpened(LocalDateTime.now(TASHKENT_ZONE_ID), restaurant)) {
-            DefaultBadRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
+            badRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
             return;
         }
         SendMessage loadingMessage = new SendMessage()

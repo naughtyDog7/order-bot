@@ -9,6 +9,8 @@ import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class TelegramUserServiceImpl implements TelegramUserService {
@@ -62,5 +64,19 @@ public class TelegramUserServiceImpl implements TelegramUserService {
     @Override
     public TelegramUser findByOrderId(long id) {
         return repo.findByOrderId(id);
+    }
+
+    private static final Pattern PHONE_NUM_PATTERN = Pattern.compile("^(?:\\+?998)?[ -]?(\\d{2})[ -]?(\\d{3})[ -]?(\\d{2})[ -]?(\\d{2})$");
+
+    @Override
+    public void checkAndSetPhoneNum(TelegramUser telegramUser, String phoneNum) {
+        Matcher m = PHONE_NUM_PATTERN.matcher(phoneNum);
+        String cleanedPhoneNum;
+        if (m.matches()) {
+            cleanedPhoneNum = m.group(1) + "-" + m.group(2) + "-" + m.group(3) + "-" + m.group(4);
+        } else {
+            throw new IllegalArgumentException("Phone number doesn't match predefined pattern. Number: " + phoneNum + ", pattern " + PHONE_NUM_PATTERN.pattern());
+        }
+        telegramUser.setPhoneNum(cleanedPhoneNum);
     }
 }

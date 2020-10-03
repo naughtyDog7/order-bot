@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 @Entity
 @NoArgsConstructor(force = true)
@@ -69,10 +68,6 @@ public class TelegramUser {
                 .add("langISO='" + langISO + "'")
                 .add("receiveComments=" + receiveComments)
                 .add("curState=" + curState)
-                .add("orders=" + orders
-                        .stream()
-                        .map(o -> o.getId() + "")
-                        .collect(Collectors.joining(",", "[", "]")))
                 .add("role=" + role)
                 .toString();
     }

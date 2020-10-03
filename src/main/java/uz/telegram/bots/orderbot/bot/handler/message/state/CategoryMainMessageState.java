@@ -38,13 +38,14 @@ class CategoryMainMessageState implements MessageState {
     private final KeyboardFactory kf;
     private final KeyboardUtil ku;
     private final LockFactory lf;
+    private final BadRequestHandler badRequestHandler;
 
     @Autowired
     CategoryMainMessageState(ResourceBundleFactory rbf, TelegramUserService service,
                              ProductService productService, ProductWithCountService productWithCountService,
                              OrderService orderService, CategoryService categoryService,
                              RestaurantService restaurantService, KeyboardFactory kf,
-                             KeyboardUtil ku, LockFactory lf) {
+                             KeyboardUtil ku, LockFactory lf, BadRequestHandler badRequestHandler) {
         this.rbf = rbf;
         this.service = service;
         this.productService = productService;
@@ -55,6 +56,7 @@ class CategoryMainMessageState implements MessageState {
         this.kf = kf;
         this.ku = ku;
         this.lf = lf;
+        this.badRequestHandler = badRequestHandler;
     }
 
     @Override
@@ -63,7 +65,7 @@ class CategoryMainMessageState implements MessageState {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         if (!message.hasText()) {
-            DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
+            badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
 
@@ -85,7 +87,7 @@ class CategoryMainMessageState implements MessageState {
                 Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
 
                 optProduct.ifPresentOrElse(product -> handleProduct(bot, telegramUser, rb, product, order),
-                        () -> DefaultBadRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+                        () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
             }
         } finally {
             lock.unlock();
