@@ -43,7 +43,7 @@ public class InvoiceHandler implements Handler {
 
     @Override
     public void handle(Update update) {
-        TelegramUser telegramUser = service.getOrSaveUser(update);
+        TelegramUser telegramUser = service.getOrSaveAndGetUserFromUpdate(update);
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
         Lock lock = rlf.getLockForChatId(telegramUser.getChatId());
         try {

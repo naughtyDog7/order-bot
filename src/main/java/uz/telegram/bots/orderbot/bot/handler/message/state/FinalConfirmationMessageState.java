@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.*;
+import uz.telegram.bots.orderbot.bot.service.jowi.JowiService;
 import uz.telegram.bots.orderbot.bot.user.Category;
 import uz.telegram.bots.orderbot.bot.user.Order;
 import uz.telegram.bots.orderbot.bot.user.Restaurant;

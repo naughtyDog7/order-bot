@@ -79,33 +79,38 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void delete(Product product, String restaurantId, TelegramLongPollingBot bot, TelegramUser callerUser) {
-        List<ProductWithCount> pwcsToDelete =
-                pwcRepository.findAllToDeleteByRestaurantAndProduct(restaurantId, product.getProductId(), ACTIVE);
-        for (ProductWithCount pwc: pwcsToDelete) {
-            Order order = orderRepository.findByProductWithCountId(pwc.getId());
-            TelegramUser telegramUser = userService.findByOrderId(order.getId());
-            Lock lock = null;
-            try {
-                if (!telegramUser.equals(callerUser)) {
-                    lock = lf.getLockForChatId(telegramUser.getChatId());
-                    lock.lock();
-                }
-                pwcRepository.delete(pwc);
-                ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
-                SendMessage sendMessage = new SendMessage()
-                        .setChatId(telegramUser.getChatId())
-                        .setText(rb.getString("product-on-server-deleted-and-removed-from-basket")
-                                .replace("{productName}", product.getName()));
-                bot.execute(sendMessage);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            } finally {
-                if (lock != null)
-                    lock.unlock();
-            }
-        }
+        deletePwcsWithCurrentProduct(product, restaurantId, bot);
         productRepository.delete(product);
     }
-}
 
+    private void deletePwcsWithCurrentProduct(Product product, String restaurantId, TelegramLongPollingBot bot) {
+        List<ProductWithCount> pwcsToDelete =
+                pwcRepository.findAllToDeleteByRestaurantAndProduct(restaurantId, product.getProductId(), ACTIVE);
+        for (ProductWithCount pwc : pwcsToDelete) {
+            Order order = orderRepository.findByProductWithCountId(pwc.getId());
+            TelegramUser telegramUser = userService.findByOrderId(order.getId());
+            Lock lock = lf.getLockForChatId(telegramUser.getChatId());
+            try {
+                lock.lock();
+                pwcRepository.delete(pwc);
+                notifyUsersAboutDelete(product, telegramUser, bot);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    private void notifyUsersAboutDelete(Product product, TelegramUser telegramUser, TelegramLongPollingBot bot) {
+        ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("product-on-server-deleted-and-removed-from-basket")
+                        .replace("{productName}", product.getName()));
+        try {
+            bot.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+}
     

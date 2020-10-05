@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface TelegramUserService {
     Optional<TelegramUser> findById(Integer integer);
     List<TelegramUser> findCommentReceivers();
-    TelegramUser getOrSaveUser(Update update);
+    TelegramUser getOrSaveAndGetUserFromUpdate(Update update);
     <S extends TelegramUser> S save(S s);
 
     TelegramUser findByOrderId(long id);

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import uz.telegram.bots.orderbot.bot.properties.JowiProperties;
 
 @Getter
 @Setter
@@ -20,5 +21,9 @@ public class OrderWrapper {
         this.apiKey = apiKey;
         this.sig = sig;
         this.restaurantId = restaurantId;
+    }
+
+    public OrderWrapper(JowiProperties jowiProperties, String restaurantId) {
+        this(jowiProperties.getApiKey(), jowiProperties.getSig(), restaurantId);
     }
 }

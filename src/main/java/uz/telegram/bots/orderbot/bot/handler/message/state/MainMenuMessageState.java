@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.telegram.bots.orderbot.bot.service.*;
+import uz.telegram.bots.orderbot.bot.service.jowi.JowiService;
 import uz.telegram.bots.orderbot.bot.user.Restaurant;
 import uz.telegram.bots.orderbot.bot.user.TelegramUser;
 import uz.telegram.bots.orderbot.bot.util.*;
@@ -129,7 +130,7 @@ class MainMenuMessageState implements MessageState {
                 Message message = bot.execute(loadingMessage);
                 CompletableFuture<List<Restaurant>> future = CompletableFuture.supplyAsync(() -> {
                     try {
-                        return jowiService.updateAndFetchRestaurants();
+                        return jowiService.fetchAndUpdateRestaurants();
                     } catch (IOException e) {
                         JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
                         throw new UncheckedIOException(e);

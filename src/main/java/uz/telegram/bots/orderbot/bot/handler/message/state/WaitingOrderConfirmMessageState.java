@@ -8,7 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import uz.telegram.bots.orderbot.bot.service.JowiService;
+import uz.telegram.bots.orderbot.bot.service.jowi.JowiService;
 import uz.telegram.bots.orderbot.bot.service.OrderService;
 import uz.telegram.bots.orderbot.bot.service.TelegramUserService;
 import uz.telegram.bots.orderbot.bot.user.Order;

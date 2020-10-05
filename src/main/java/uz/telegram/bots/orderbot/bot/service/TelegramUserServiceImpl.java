@@ -32,8 +32,8 @@ public class TelegramUserServiceImpl implements TelegramUserService {
     }
 
     @Override
-    public synchronized TelegramUser getOrSaveUser(Update update) {
-        User user = null;
+    public synchronized TelegramUser getOrSaveAndGetUserFromUpdate(Update update) {
+        User user;
         long chatId = -1;
         if (update.hasMessage()) {
             user = update.getMessage().getFrom();
@@ -43,17 +43,19 @@ public class TelegramUserServiceImpl implements TelegramUserService {
         } else if (update.hasPreCheckoutQuery()) {
             user = update.getPreCheckoutQuery().getFrom();
         } else {
-            throw new NullPointerException("Couldn't get user from update");
+            throw new IllegalArgumentException("Couldn't get user from update");
         }
+        return getOrSaveAndGetUser(user, chatId);
+    }
+
+    private TelegramUser getOrSaveAndGetUser(User user, long chatId) {
         Optional<TelegramUser> optTelegramUser = repo.findByUserId(user.getId());
-        TelegramUser telegramUser;
         if (optTelegramUser.isEmpty()) {
-            telegramUser = repo.save(new TelegramUser(user.getId(), chatId,
+            return repo.save(new TelegramUser(user.getId(), chatId,
                     user.getUserName(), user.getFirstName(), user.getLastName()));
         } else {
-            telegramUser = optTelegramUser.get();
+            return optTelegramUser.get();
         }
-        return telegramUser;
     }
 
     @Override
