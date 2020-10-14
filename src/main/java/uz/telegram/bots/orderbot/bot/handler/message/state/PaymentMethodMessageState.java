@@ -145,6 +145,6 @@ class PaymentMethodMessageState implements MessageState {
                 .rb(rb)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketItemsCount, false);
+                .handleToOrderMain(basketItemsCount, ToOrderMainHandler.CallerPlace.OTHER);
     }
 }

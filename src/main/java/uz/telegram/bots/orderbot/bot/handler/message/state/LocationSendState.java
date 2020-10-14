@@ -161,6 +161,6 @@ class LocationSendState implements MessageState {
                 .kf(kf)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketNumItems, false);
+                .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
     }
 }

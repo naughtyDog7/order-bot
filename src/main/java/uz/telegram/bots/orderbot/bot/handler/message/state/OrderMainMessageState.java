@@ -107,7 +107,7 @@ class OrderMainMessageState implements MessageState {
                         .kf(kf)
                         .categories(categories)
                         .build()
-                        .handleToOrderMain(basketItemsNum, false);
+                        .handleToOrderMain(basketItemsNum, ToOrderMainHandler.CallerPlace.OTHER);
                 return;
             }
             int index = Category.getNames(categories).indexOf(text);

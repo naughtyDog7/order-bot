@@ -152,7 +152,7 @@ class CategoryMainMessageState implements MessageState {
                 .ku(ku)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketNumItems, false);
+                .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
 
     }
 

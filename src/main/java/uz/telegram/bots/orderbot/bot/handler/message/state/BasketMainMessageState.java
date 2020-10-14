@@ -143,6 +143,6 @@ class BasketMainMessageState implements MessageState {
                 .telegramUser(telegramUser)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketNumItems, false);
+                .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
     }
 }

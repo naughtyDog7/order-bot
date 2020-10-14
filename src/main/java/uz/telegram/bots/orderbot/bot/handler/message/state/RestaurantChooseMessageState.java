@@ -147,7 +147,7 @@ class RestaurantChooseMessageState implements MessageState {
                     .rb(rb)
                     .categories(categories)
                     .build()
-                    .handleToOrderMain(0, true);
+                    .handleToOrderMain(0, ToOrderMainHandler.CallerPlace.MAIN_MENU);
         } catch (TelegramApiException | ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

@@ -147,6 +147,6 @@ class FinalConfirmationMessageState implements MessageState {
                 .rb(rb)
                 .categories(categories)
                 .build()
-                .handleToOrderMain(basketNumItems, false);
+                .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
     }
 }
