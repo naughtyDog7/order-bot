@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.CATEGORY_MAIN;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.CATEGORY_MAIN;
 
 @Builder
 class ToCategoryMainHandler {

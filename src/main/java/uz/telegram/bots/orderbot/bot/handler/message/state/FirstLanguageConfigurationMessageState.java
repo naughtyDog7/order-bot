@@ -72,7 +72,7 @@ class FirstLanguageConfigurationMessageState implements MessageState {
         try {
             bot.execute(sendMessage1);
             bot.execute(sendMessage2);
-            telegramUser.setCurState(TelegramUser.UserState.MAIN_MENU);
+            telegramUser.setCurState(UserState.MAIN_MENU);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

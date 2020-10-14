@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.locks.Lock;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.LOCATION_SENDING;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.LOCATION_SENDING;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.LOCATION_KEYBOARD;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 

@@ -15,7 +15,7 @@ import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.util.ResourceBundle;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.SETTINGS;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.SETTINGS;
 
 @Component
 class LanguageConfigurationMessageState implements MessageState {

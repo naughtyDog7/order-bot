@@ -16,7 +16,7 @@ import uz.telegram.bots.orderbot.bot.util.ResourceBundleFactory;
 
 import java.util.ResourceBundle;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.LANGUAGE_CONFIGURE;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.LANGUAGE_CONFIGURE;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.LANG_KEYBOARD;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 
@@ -80,7 +80,7 @@ class SettingsMessageState implements MessageState {
                                 .setText(rb.getString("your-current-phone-num-is") + " " + phoneNum));
             }
             bot.execute(sendMessage2);
-            telegramUser.setCurState(TelegramUser.UserState.SETTINGS_PHONE_NUM);
+            telegramUser.setCurState(UserState.SETTINGS_PHONE_NUM);
             service.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();

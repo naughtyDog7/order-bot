@@ -102,7 +102,7 @@ class CategoryMainMessageState implements MessageState {
         setProductKeyboard(sendMessage, telegramUser.getLangISO(), product);
         try {
             bot.execute(sendMessage);
-            telegramUser.setCurState(TelegramUser.UserState.PRODUCT_NUM_CHOOSE);
+            telegramUser.setCurState(UserState.PRODUCT_NUM_CHOOSE);
             service.save(telegramUser);
             order.setLastChosenProductStringId(product.getProductId());
             orderService.save(order);

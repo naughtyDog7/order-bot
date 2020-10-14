@@ -100,7 +100,7 @@ class LocationSendState implements MessageState {
         setConfirmOrderKeyboard(sendMessage, telegramUser.getLangISO());
         try {
             bot.execute(sendMessage);
-            telegramUser.setCurState(TelegramUser.UserState.FINAL_CONFIRMATION);
+            telegramUser.setCurState(UserState.FINAL_CONFIRMATION);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();

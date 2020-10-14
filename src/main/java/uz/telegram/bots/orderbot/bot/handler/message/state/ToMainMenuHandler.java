@@ -11,7 +11,7 @@ import uz.telegram.bots.orderbot.bot.util.KeyboardFactory;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.MAIN_MENU;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.MAIN_MENU;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.MAIN_MENU_KEYBOARD;
 
 @Builder

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import uz.telegram.bots.orderbot.bot.handler.message.state.UserState;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -70,27 +71,6 @@ public class TelegramUser {
                 .add("curState=" + curState)
                 .add("role=" + role)
                 .toString();
-    }
-
-    public enum UserState {
-        PRE_GREETING,
-        FIRST_LANGUAGE_CONFIGURE,
-        MAIN_MENU,
-        SETTINGS,
-        LANGUAGE_CONFIGURE,
-        RESTAURANT_CHOOSE,
-        ORDER_MAIN,
-        CONTACT_US,
-        CATEGORY_MAIN,
-        PRODUCT_NUM_CHOOSE,
-        BASKET_MAIN,
-        SETTINGS_PHONE_NUM,
-        ORDER_PHONE_NUM,
-        PAYMENT_METHOD_CHOOSE,
-        FINAL_CONFIRMATION,
-        WAITING_ORDER_CONFIRM,
-        ONLINE_PAYMENT,
-        LOCATION_SENDING
     }
 
     public enum Role {

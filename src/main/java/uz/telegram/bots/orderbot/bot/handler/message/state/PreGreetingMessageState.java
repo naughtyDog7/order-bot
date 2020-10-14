@@ -46,7 +46,7 @@ class PreGreetingMessageState implements MessageState {
         try {
             bot.execute(sendMessage1);
             bot.execute(sendMessage2);
-            telegramUser.setCurState(TelegramUser.UserState.FIRST_LANGUAGE_CONFIGURE);
+            telegramUser.setCurState(UserState.FIRST_LANGUAGE_CONFIGURE);
             service.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();

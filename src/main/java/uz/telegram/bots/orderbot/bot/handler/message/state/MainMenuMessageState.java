@@ -31,7 +31,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.*;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.*;
 
 @Component
 @Slf4j

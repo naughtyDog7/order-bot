@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.ORDER_MAIN;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.ORDER_MAIN;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.CATEGORIES_TEMPLATE_KEYBOARD;
 import static uz.telegram.bots.orderbot.bot.util.TextUtil.getRandMealEmoji;
 

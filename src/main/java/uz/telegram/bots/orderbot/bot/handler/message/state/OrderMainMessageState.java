@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.regex.Pattern;
 
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.ORDER_PHONE_NUM;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.ORDER_PHONE_NUM;
 import static uz.telegram.bots.orderbot.bot.util.KeyboardFactory.KeyboardType.PHONE_NUM_ENTER_KEYBOARD;
 
 @Component
@@ -230,7 +230,7 @@ class OrderMainMessageState implements MessageState {
 
         try {
             bot.execute(sendMessage);
-            telegramUser.setCurState(TelegramUser.UserState.BASKET_MAIN);
+            telegramUser.setCurState(UserState.BASKET_MAIN);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();

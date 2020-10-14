@@ -33,7 +33,7 @@ import java.util.concurrent.locks.Lock;
 
 import static uz.telegram.bots.orderbot.bot.user.PaymentInfo.PaymentMethod.CLICK;
 import static uz.telegram.bots.orderbot.bot.user.PaymentInfo.PaymentMethod.PAYME;
-import static uz.telegram.bots.orderbot.bot.user.TelegramUser.UserState.ONLINE_PAYMENT;
+import static uz.telegram.bots.orderbot.bot.handler.message.state.UserState.ONLINE_PAYMENT;
 
 @RestController
 @RequestMapping("/webhook")

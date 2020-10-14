@@ -117,7 +117,7 @@ class FinalConfirmationMessageState implements MessageState {
                         .setText(rb.getString("order-was-sent-to-server"));
                 setCheckStatusKeyboard(sendMessage, telegramUser.getLangISO());
                 bot.execute(sendMessage);
-                telegramUser.setCurState(TelegramUser.UserState.WAITING_ORDER_CONFIRM);
+                telegramUser.setCurState(UserState.WAITING_ORDER_CONFIRM);
                 userService.save(telegramUser);
             }
         } catch (IOException e) {
