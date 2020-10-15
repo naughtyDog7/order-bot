@@ -45,13 +45,13 @@ class ToOrderMainHandler {
         } else {
             String text = rb.getString(callerPlace == CallerPlace.MAIN_MENU
                     ? "order-message" : "order-message-2");
-            SendMessage sendMessage = new SendMessage()
+            SendMessage orderMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(text + getRandMealEmoji());
-            setKeyboard(sendMessage, basketNumItems);
+            setKeyboard(orderMessage, basketNumItems);
 
             try {
-                bot.execute(sendMessage);
+                bot.execute(orderMessage);
                 telegramUser.setCurState(ORDER_MAIN);
                 service.save(telegramUser);
             } catch (TelegramApiException e) {
@@ -62,22 +62,22 @@ class ToOrderMainHandler {
 
     private void handleEmptyCategories(int basketNumItems) {
         if (basketNumItems == 0) {
-            SendMessage sendMessage = new SendMessage()
+            SendMessage noAvailableProductsMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("currently-no-available-courses"));
             try {
-                bot.execute(sendMessage);
+                bot.execute(noAvailableProductsMessage);
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
         } else {
-            SendMessage sendMessage = new SendMessage()
+            SendMessage noAvailableProductLeftLeft = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("no-non-empty-categories-left"));
-            setKeyboard(sendMessage, basketNumItems);
+            setKeyboard(noAvailableProductLeftLeft, basketNumItems);
 
             try {
-                bot.execute(sendMessage);
+                bot.execute(noAvailableProductLeftLeft);
                 telegramUser.setCurState(ORDER_MAIN);
                 service.save(telegramUser);
             } catch (TelegramApiException e) {

@@ -120,11 +120,11 @@ public class WebhookController {
     }
 
     private void handleAccepted(TelegramUser telegramUser, Order order, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage orderAcceptedMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("order-is-accepted-from-server"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(orderAcceptedMessage);
             PaymentInfo pi = paymentInfoService.findByOrderId(order.getId());
             PaymentMethod paymentMethod = pi.getPaymentMethod();
             if (paymentMethod == CLICK || paymentMethod == PAYME) {
@@ -138,39 +138,47 @@ public class WebhookController {
     }
 
     private void handleCash(TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage waitForCallMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("after-success-order"));
         try {
-            bot.execute(sendMessage);
-            ToMainMenuHandler.builder()
-                    .telegramUser(telegramUser)
-                    .service(userService)
-                    .bot(bot)
-                    .rb(rb)
-                    .kf(kf)
-                    .build()
-                    .handleToMainMenu();
+            bot.execute(waitForCallMessage);
+            handleToMainMenu(telegramUser, rb);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
+    private void handleToMainMenu(TelegramUser telegramUser, ResourceBundle rb) {
+        ToMainMenuHandler.builder()
+                .telegramUser(telegramUser)
+                .service(userService)
+                .bot(bot)
+                .rb(rb)
+                .kf(kf)
+                .build()
+                .handleToMainMenu();
+    }
+
     private void handleOnline(TelegramUser telegramUser, Order order, ResourceBundle rb, PaymentMethod paymentMethod) {
         String paymentMethodString = rb.getString(paymentMethod.getRbValue());
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("now-we-will-send-you-bill").replace("{payment-method}", paymentMethodString))
-                .setReplyMarkup(new ReplyKeyboardRemove());
         SendInvoice sendInvoice = createInvoice(telegramUser, order, rb, paymentMethod);
         try {
-            bot.execute(sendMessage);
+            sendBillSendingMessage(telegramUser, rb, paymentMethodString);
             bot.execute(sendInvoice);
             telegramUser.setCurState(ONLINE_PAYMENT);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    private void sendBillSendingMessage(TelegramUser telegramUser, ResourceBundle rb, String paymentMethodString) throws TelegramApiException {
+        SendMessage creatingBillMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("now-we-will-send-you-bill").replace("{payment-method}", paymentMethodString))
+                .setReplyMarkup(new ReplyKeyboardRemove());
+        bot.execute(creatingBillMessage);
     }
 
     private SendInvoice createInvoice(TelegramUser telegramUser, Order order, ResourceBundle rb, PaymentMethod paymentMethod) {
@@ -197,11 +205,11 @@ public class WebhookController {
     }
 
     private void handleSent(TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage orderWasSentMessage = new SendMessage()
                 .setText(rb.getString("your-order-is-sent"))
                 .setChatId(telegramUser.getChatId());
         try {
-            bot.execute(sendMessage);
+            bot.execute(orderWasSentMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
@@ -209,20 +217,13 @@ public class WebhookController {
 
     private void handleCancelled(TelegramUser telegramUser, Order order, ResourceBundle rb) {
         log.info("Order cancelled");
-        SendMessage sendMessage = new SendMessage()
+        SendMessage orderWasCancelledMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("order-was-cancelled"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(orderWasCancelledMessage);
             orderService.deleteOrder(order);
-            ToMainMenuHandler.builder()
-                    .telegramUser(telegramUser)
-                    .service(userService)
-                    .bot(bot)
-                    .kf(kf)
-                    .rb(rb)
-                    .build()
-                    .handleToMainMenu();
+            handleToMainMenu(telegramUser, rb);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

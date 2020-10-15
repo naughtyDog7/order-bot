@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.telegram.telegrambots.meta.api.objects.Location;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -22,8 +23,12 @@ public class TelegramLocation {
 
     private final double latitude, longitude;
 
-    public static TelegramLocation of(double latitude, double longitude) {
+    public static TelegramLocation from(double latitude, double longitude) {
         return new TelegramLocation(latitude, longitude);
+    }
+
+    public static TelegramLocation from(Location location) {
+        return new TelegramLocation(location.getLatitude(), location.getLongitude());
     }
 
     @Override

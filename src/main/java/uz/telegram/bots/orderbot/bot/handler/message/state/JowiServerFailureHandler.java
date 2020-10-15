@@ -9,12 +9,12 @@ import java.util.ResourceBundle;
 
 class JowiServerFailureHandler {
     public static void handleServerFail(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage serverFailureMessage = new SendMessage()
                 .setText(rb.getString("server-failure-message"))
                 .setChatId(telegramUser.getChatId());
 
         try {
-            bot.execute(sendMessage);
+            bot.execute(serverFailureMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

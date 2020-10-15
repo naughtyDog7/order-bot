@@ -68,81 +68,39 @@ class CategoryMainMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
 
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                   ResourceBundle rb, String messageText) {
         String backButtonText = rb.getString("btn-back");
-        String text = message.getText();
         Order order = orderService.findActive(telegramUser)
                 .orElseThrow(() -> new AssertionError("Order must be present at this point"));
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
             Restaurant restaurant = restaurantService.findByOrderId(order.getId());
-            if (text.equals(backButtonText)) {
-                List<Category> categories = categoryService.findNonEmptyByRestaurantStringId(restaurant.getRestaurantId());
-                int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
-                handleBack(bot, telegramUser, rb, categories, basketItemsNum);
+            if (messageText.equals(backButtonText)) {
+                getCategoriesAndHandleBack(bot, telegramUser, rb, order, restaurant);
             } else {
-                Category category = categoryService.findLastChosenByOrder(order)
-                        .orElseThrow(() -> new AssertionError("Category must be present at this point"));
-                Optional<Product> optProduct = productService.getByCategoryIdAndName(category.getId(), text); //if present then valid product name was received in message
-
-                optProduct.ifPresentOrElse(product -> handleProduct(bot, telegramUser, rb, product, order),
-                        () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+                handlePotentialProductName(bot, telegramUser, rb, messageText, order);
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private void handleProduct(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Product product, Order order) {
-        sendProductMessage(bot, telegramUser, rb, product);
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("choose-product-num"));
-        setProductKeyboard(sendMessage, telegramUser.getLangISO(), product);
-        try {
-            bot.execute(sendMessage);
-            telegramUser.setCurState(UserState.PRODUCT_NUM_CHOOSE);
-            service.save(telegramUser);
-            order.setLastChosenProductStringId(product.getProductId());
-            orderService.save(order);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+    private void getCategoriesAndHandleBack(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                            ResourceBundle rb, Order order, Restaurant restaurant) {
+        List<Category> categories
+                = categoryService.findNonEmptyByRestaurantStringId(restaurant.getRestaurantId());
+        int basketItemsNum = productWithCountService.getBasketItemsCount(order.getId());
+        handleBack(bot, telegramUser, rb, categories, basketItemsNum);
     }
 
-    private void sendProductMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Product product) {
-        String imageUrl = product.getImageUrl();
-        if (imageUrl != null) {
-            try {
-                URL url = new URL(imageUrl);
-                URLConnection urlConnection = url.openConnection();
-                SendPhoto sendPhoto = new SendPhoto()
-                        .setPhoto(product.getName(), urlConnection.getInputStream())
-                        .setChatId(telegramUser.getChatId())
-                        .setCaption(String.format("%s: %d %s", rb.getString("price"), product.getPrice(), rb.getString("uzs-text")));
-                bot.execute(sendPhoto);
-                return;
-            } catch (IOException ignored) { // this exceptions are ignored because if photo cannot be found or fetched alternate way will be used
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        }
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(String.format("%s %d %s", rb.getString("this-courses-price-is"), product.getPrice(), rb.getString("uzs-text")));
-        try {
-            bot.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setProductKeyboard(SendMessage sendMessage, String langISO, Product product) {
-        ku.setProductNumChoose(sendMessage, langISO, product);
-    }
-
-    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, List<Category> categories, int basketNumItems) {
+    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                            ResourceBundle rb, List<Category> categories, int basketNumItems) {
         ToOrderMainHandler.builder()
                 .bot(bot)
                 .kf(kf)
@@ -154,6 +112,76 @@ class CategoryMainMessageState implements MessageState {
                 .build()
                 .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
 
+    }
+
+    private void handlePotentialProductName(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                            ResourceBundle rb, String messageText, Order order) {
+        Category currentCategory = categoryService.findLastChosenByOrder(order)
+                .orElseThrow(() -> new AssertionError("Category must be present at this point"));
+        Optional<Product> optProduct
+                = productService.getByCategoryIdAndName(currentCategory.getId(), messageText);
+        //if present then valid product name was received in message
+        optProduct.ifPresentOrElse(product -> handleProduct(bot, telegramUser, rb, product, order),
+                () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+    }
+
+    private void handleProduct(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                               ResourceBundle rb, Product product, Order order) {
+        try {
+            sendProductTitleMessage(bot, telegramUser, rb, product);
+            sendChooseProductNumberMessage(bot, telegramUser, rb, product);
+            telegramUser.setCurState(UserState.PRODUCT_NUM_CHOOSE);
+            service.save(telegramUser);
+            order.setLastChosenProductStringId(product.getProductId());
+            orderService.save(order);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendProductTitleMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                         ResourceBundle rb, Product product) throws TelegramApiException {
+        String imageUrl = product.getImageUrl();
+        try {
+            trySendPhoto(bot, telegramUser, rb, product, imageUrl);
+        } catch (IOException e) {
+            handleProductPhotoUnavailable(bot, telegramUser, rb, product);
+        }
+    }
+
+    private void trySendPhoto(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                              ResourceBundle rb, Product product, String imageUrl) throws IOException, TelegramApiException {
+        URL url = new URL(imageUrl);
+        URLConnection urlConnection = url.openConnection();
+        SendPhoto sendPhoto = new SendPhoto()
+                .setPhoto(product.getName(), urlConnection.getInputStream())
+                .setChatId(telegramUser.getChatId())
+                .setCaption(String.format("%s: %d %s", rb.getString("price"), product.getPrice(), rb.getString("uzs-text")));
+        bot.execute(sendPhoto);
+    }
+
+    private void handleProductPhotoUnavailable(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Product product) {
+        SendMessage productTitleMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(String.format("%s %d %s", rb.getString("this-courses-price-is"), product.getPrice(), rb.getString("uzs-text")));
+        try {
+            bot.execute(productTitleMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendChooseProductNumberMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                                ResourceBundle rb, Product product) throws TelegramApiException {
+        SendMessage chooseNumberMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("choose-product-num"));
+        setProductKeyboard(chooseNumberMessage, telegramUser.getLangISO(), product);
+        bot.execute(chooseNumberMessage);
+    }
+
+    private void setProductKeyboard(SendMessage sendMessage, String langISO, Product product) {
+        ku.setProductNumChoose(sendMessage, langISO, product);
     }
 
 

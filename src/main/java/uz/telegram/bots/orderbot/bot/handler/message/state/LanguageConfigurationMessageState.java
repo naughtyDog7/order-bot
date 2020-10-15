@@ -39,33 +39,46 @@ class LanguageConfigurationMessageState implements MessageState {
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         Message message = update.getMessage();
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
-
         if (!message.hasText()) {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
 
-        String lang = message.getText();
-        if (lang.equals(rb.getString("btn-uzb-lang")))
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                   ResourceBundle rb, String messageText) {
+        if (messageText.equals(rb.getString("btn-uzb-lang")))
             telegramUser.setLangISO("uzb");
-        else if (lang.equals(rb.getString("btn-rus-lang")))
+        else if (messageText.equals(rb.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
         else {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        handleLangConfigured(bot, telegramUser);
+    }
+
+    private void handleLangConfigured(TelegramLongPollingBot bot, TelegramUser telegramUser) {
+        ResourceBundle rb;
         String newLangISO = telegramUser.getLangISO();
         rb = rbf.getMessagesBundle(newLangISO);
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("language-chosen"));
-        ku.setSettingsKeyboard(sendMessage, rb, newLangISO, kf, telegramUser.getPhoneNum() != null);
         try {
-            bot.execute(sendMessage);
+            sendSettingsMessage(bot, telegramUser, rb, newLangISO);
             telegramUser.setCurState(SETTINGS);
             service.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    private void sendSettingsMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                     ResourceBundle rb, String newLangISO) throws TelegramApiException {
+        SendMessage langChosenSuccessfullyMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("language-chosen"));
+        ku.setSettingsKeyboard(langChosenSuccessfullyMessage, rb, newLangISO, kf, telegramUser.getPhoneNum() != null);
+        bot.execute(langChosenSuccessfullyMessage);
     }
 }

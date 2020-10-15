@@ -71,22 +71,10 @@ class OrderPhoneNumState implements MessageState {
             Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (message.hasText()) {
-                String btnBack = rb.getString("btn-back");
-                String btnConfirm = rb.getString("btn-confirm");
-                String btnChangeNum = rb.getString("btn-change-existing-phone-num");
-                String text = message.getText();
-                String phoneNum = telegramUser.getPhoneNum();
-                if (text.equals(btnBack))
-                    handleBack(bot, telegramUser, rb, order);
-                else if (phoneNum != null && text.equals(btnConfirm))
-                    handleConfirmPhoneNum(bot, telegramUser, rb);
-                else if (phoneNum != null && text.equals(btnChangeNum))
-                    handleChangePhoneNum(bot, telegramUser, rb);
-                else handleNewPhoneNum(bot, telegramUser, rb, text);
+                String messageText = message.getText();
+                handleMessageText(bot, telegramUser, rb, order, messageText);
             } else if (message.hasContact()) {
-                Contact contact = message.getContact();
-                String phoneNum = contact.getPhoneNumber();
-                handleNewPhoneNum(bot, telegramUser, rb, phoneNum);
+                handleContact(bot, telegramUser, message.getContact(), rb);
             } else {
                 badRequestHandler.handleContactBadRequest(bot, telegramUser, rb);
             }
@@ -95,71 +83,25 @@ class OrderPhoneNumState implements MessageState {
         }
     }
 
-    private void handleConfirmPhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("phone-num-confirmed"));
-        try {
-            bot.execute(sendMessage);
-            toLocationChoosing(bot, telegramUser, rb);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-
+    private void handleContact(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                               Contact contact, ResourceBundle rb) {
+        String phoneNum = contact.getPhoneNumber();
+        handleNewPhoneNum(bot, telegramUser, rb, phoneNum);
     }
 
-    private void handleChangePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("press-to-send-contact"));
-
-        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, telegramUser.getLangISO());
-        sendMessage.setReplyMarkup(ku.addBackButtonLast(keyboard, telegramUser.getLangISO())
-                .setResizeKeyboard(true));
-
-        try {
-            bot.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void handleNewPhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
-        try {
-            userService.checkAndSetPhoneNum(telegramUser, phoneNum);
-            log.info("Phone num updated, telegram user " + telegramUser);
-
-        } catch (IllegalArgumentException e) {
-            badRequestHandler.handleBadPhoneNumber(bot, telegramUser, rb);
-            return;
-        }
-        userService.save(telegramUser);
-        SendMessage sendMessage = new SendMessage()
-                .setText(rb.getString("phone-set-success"))
-                .setChatId(telegramUser.getChatId());
-        try {
-            bot.execute(sendMessage);
-            toLocationChoosing(bot, telegramUser, rb);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void toLocationChoosing(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage2 = new SendMessage()
-                .setText(rb.getString("request-send-location"))
-                .setChatId(telegramUser.getChatId());
-        ReplyKeyboardMarkup keyboard = kf.getKeyboard(LOCATION_KEYBOARD, telegramUser.getLangISO());
-        sendMessage2.setReplyMarkup(ku.addBackButtonLast(keyboard, telegramUser.getLangISO())
-                .setResizeKeyboard(true));
-
-        try {
-            bot.execute(sendMessage2);
-            telegramUser.setCurState(LOCATION_SENDING);
-            userService.save(telegramUser);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, String messageText) {
+        String btnBack = rb.getString("btn-back");
+        String btnConfirm = rb.getString("btn-confirm");
+        String btnChangeNum = rb.getString("btn-change-existing-phone-num");
+        String phoneNum = telegramUser.getPhoneNum();
+        if (messageText.equals(btnBack))
+            handleBack(bot, telegramUser, rb, order);
+        else if (phoneNum != null && messageText.equals(btnConfirm))
+            handleConfirmPhoneNum(bot, telegramUser, rb);
+        else if (phoneNum != null && messageText.equals(btnChangeNum))
+            handleChangePhoneNum(bot, telegramUser, rb);
+        else
+            handleNewPhoneNum(bot, telegramUser, rb, messageText);
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
@@ -176,5 +118,86 @@ class OrderPhoneNumState implements MessageState {
                 .categories(categories)
                 .build()
                 .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
+    }
+
+    private void handleConfirmPhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage phoneNumConfirmedMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("phone-num-confirmed"));
+        try {
+            bot.execute(phoneNumConfirmedMessage);
+            toLocationChoosing(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toLocationChoosing(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        try {
+            sendLocationMessage(bot, telegramUser, rb);
+            telegramUser.setCurState(LOCATION_SENDING);
+            userService.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendLocationMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) throws TelegramApiException {
+        SendMessage locationRequestMessage = new SendMessage()
+                .setText(rb.getString("request-send-location"))
+                .setChatId(telegramUser.getChatId());
+        setLocationKeyboard(telegramUser, locationRequestMessage);
+        bot.execute(locationRequestMessage);
+    }
+
+    private void setLocationKeyboard(TelegramUser telegramUser, SendMessage locationRequestMessage) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(LOCATION_KEYBOARD, telegramUser.getLangISO());
+        locationRequestMessage.setReplyMarkup(ku.addBackButtonLast(keyboard, telegramUser.getLangISO())
+                .setResizeKeyboard(true));
+    }
+
+    private void handleChangePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        SendMessage phoneNumRequestMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("press-to-send-contact"));
+        setPhoneKeyboard(telegramUser, phoneNumRequestMessage);
+        try {
+            bot.execute(phoneNumRequestMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setPhoneKeyboard(TelegramUser telegramUser, SendMessage message) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, telegramUser.getLangISO());
+        message.setReplyMarkup(ku.addBackButtonLast(keyboard, telegramUser.getLangISO())
+                .setResizeKeyboard(true));
+    }
+
+    private void handleNewPhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String phoneNum) {
+        try {
+            userService.checkAndSetPhoneNum(telegramUser, phoneNum);
+            log.info("Phone num updated, telegram user " + telegramUser);
+            userService.save(telegramUser);
+            handlePhoneNumUpdated(bot, telegramUser, rb);
+        } catch (IllegalArgumentException e) {
+            badRequestHandler.handleBadPhoneNumber(bot, telegramUser, rb);
+        }
+    }
+
+    private void handlePhoneNumUpdated(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        try {
+            sendPhoneNumUpdatedMessage(bot, telegramUser, rb);
+            toLocationChoosing(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendPhoneNumUpdatedMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) throws TelegramApiException {
+        SendMessage phoneSetSuccessMessage = new SendMessage()
+            .setText(rb.getString("phone-set-success"))
+            .setChatId(telegramUser.getChatId());
+        bot.execute(phoneSetSuccessMessage);
     }
 }

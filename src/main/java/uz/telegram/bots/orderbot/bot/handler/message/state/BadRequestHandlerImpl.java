@@ -11,55 +11,55 @@ import java.util.ResourceBundle;
 @Component
 public class BadRequestHandlerImpl implements BadRequestHandler {
     public void handleTextBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage badRequestMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("bad-request-message"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(badRequestMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
     public void handleContactBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage phoneNumBadRequestMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("contact-bad-request-message"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(phoneNumBadRequestMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
     public void handleLocationBadRequest(TelegramLongPollingBot bot, TelegramUser user, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage locationBadRequestMessage = new SendMessage()
                 .setChatId(user.getChatId())
                 .setText(rb.getString("location-bad-request-message"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(locationBadRequestMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
     public void handleRestaurantClosed(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage restaurantClosedMessage = new SendMessage()
                 .setText(rb.getString("restaurant-currently-closed"))
                 .setChatId(telegramUser.getChatId());
         try {
-            bot.execute(sendMessage);
+            bot.execute(restaurantClosedMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
     public void handleBadPhoneNumber(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage phoneNumBadRequestMessage = new SendMessage()
                 .setText(rb.getString("enter-phone-num-in-format"))
                 .setChatId(telegramUser.getChatId());
         try {
-            bot.execute(sendMessage);
+            bot.execute(phoneNumBadRequestMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

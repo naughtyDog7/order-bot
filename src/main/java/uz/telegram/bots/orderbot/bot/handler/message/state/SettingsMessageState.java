@@ -47,14 +47,15 @@ class SettingsMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
 
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String messageText) {
         String changeLanguage = rb.getString("btn-settings-language-choose");
         String phoneNumSet = rb.getString("btn-set-new-phone-num");
         String phoneNumUpdate = rb.getString("btn-change-existing-phone-num");
         String back = rb.getString("btn-back");
-
-        String messageText = message.getText();
-
         if (messageText.equals(changeLanguage)) {
             handleChangeLanguage(bot, telegramUser, rb);
         } else if (messageText.equals(phoneNumSet) || messageText.equals(phoneNumUpdate)) {
@@ -66,41 +67,13 @@ class SettingsMessageState implements MessageState {
         }
     }
 
-    private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage2 = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("press-to-send-contact"));
-        setPhoneKeyboard(sendMessage2, telegramUser.getLangISO());
-
-        try {
-            String phoneNum = telegramUser.getPhoneNum();
-            if (phoneNum != null) {
-                bot.execute(new SendMessage()
-                                .setChatId(telegramUser.getChatId())
-                                .setText(rb.getString("your-current-phone-num-is") + " " + phoneNum));
-            }
-            bot.execute(sendMessage2);
-            telegramUser.setCurState(UserState.SETTINGS_PHONE_NUM);
-            service.save(telegramUser);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setPhoneKeyboard(SendMessage sendMessage, String langISO) {
-        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, langISO);
-        sendMessage.setReplyMarkup(
-                ku.addBackButtonLast(keyboard, langISO)
-                        .setResizeKeyboard(true));
-    }
-
     private void handleChangeLanguage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage langChooseMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("language-choose"));
-        setLangKeyboard(sendMessage);
+        setLangKeyboard(langChooseMessage);
         try {
-            bot.execute(sendMessage);
+            bot.execute(langChooseMessage);
             telegramUser.setCurState(LANGUAGE_CONFIGURE);
             service.save(telegramUser);
         } catch (TelegramApiException e) {
@@ -111,6 +84,41 @@ class SettingsMessageState implements MessageState {
     private void setLangKeyboard(SendMessage sendMessage) {
         sendMessage.setReplyMarkup(kf.getKeyboard(LANG_KEYBOARD, "") //lang iso empty because currently we have no lang, get default bundle
                 .setResizeKeyboard(true));
+    }
+
+    private void handlePhoneNum(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        try {
+            sendCurrentPhoneNumMessage(bot, telegramUser, rb);
+            sendPhoneNumRequestMessage(bot, telegramUser, rb);
+            telegramUser.setCurState(UserState.SETTINGS_PHONE_NUM);
+            service.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendCurrentPhoneNumMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) throws TelegramApiException {
+        String phoneNum = telegramUser.getPhoneNum();
+        if (phoneNum != null) {
+            bot.execute(new SendMessage()
+                            .setChatId(telegramUser.getChatId())
+                            .setText(rb.getString("your-current-phone-num-is") + " " + phoneNum));
+        }
+    }
+
+    private void sendPhoneNumRequestMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) throws TelegramApiException {
+        SendMessage phoneNumRequestMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("press-to-send-contact"));
+        setPhoneKeyboard(phoneNumRequestMessage, telegramUser.getLangISO());
+        bot.execute(phoneNumRequestMessage);
+    }
+
+    private void setPhoneKeyboard(SendMessage sendMessage, String langISO) {
+        ReplyKeyboardMarkup keyboard = kf.getKeyboard(PHONE_NUM_ENTER_KEYBOARD, langISO);
+        sendMessage.setReplyMarkup(
+                ku.addBackButtonLast(keyboard, langISO)
+                        .setResizeKeyboard(true));
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {

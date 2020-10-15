@@ -41,42 +41,52 @@ class FirstLanguageConfigurationMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rbf.getDefaultMessageBundle());
             return;
         }
-
         ResourceBundle defaultMessageBundle = rbf.getDefaultMessageBundle();
-        String lang = message.getText();
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, defaultMessageBundle, messageText);
+    }
 
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle defaultMessageBundle, String messageText) {
         boolean defaultChosen = false;
-
-        if (lang.contains(defaultMessageBundle.getString("btn-uzb-lang")))
+        if (messageText.contains(defaultMessageBundle.getString("btn-uzb-lang")))
             telegramUser.setLangISO("uzb");
-        else if (lang.contains(defaultMessageBundle.getString("btn-rus-lang")))
+        else if (messageText.contains(defaultMessageBundle.getString("btn-rus-lang")))
             telegramUser.setLangISO("rus");
         else {
             defaultChosen = true; //If user enters invalid lang name default is chosen, and answer message is changed to "default lang chosen"
             telegramUser.setLangISO("rus");
         }
+        handleLangConfigured(bot, telegramUser, messageText, defaultChosen);
+    }
+
+    private void handleLangConfigured(TelegramLongPollingBot bot, TelegramUser telegramUser, String messageText, boolean defaultChosen) {
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
-
         String successText = !defaultChosen ? rb.getString("language-chosen")
-                : "Язык " + lang + " не поддержтвается\n" + rb.getString("default-lang-chosen");
+                : "Язык " + messageText + " не поддержтвается\n" + rb.getString("default-lang-chosen");
 
-        SendMessage sendMessage1 = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(successText);
-
-        SendMessage sendMessage2 = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("main-menu-message"));
-
-        setMenuKeyboard(sendMessage2, telegramUser.getLangISO());
         try {
-            bot.execute(sendMessage1);
-            bot.execute(sendMessage2);
+            sendLangChooseSuccessMessage(bot, telegramUser, successText);
+            sendMainMenuMessage(bot, telegramUser, rb);
             telegramUser.setCurState(UserState.MAIN_MENU);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
         service.save(telegramUser); //saving here cause we updated lang
+    }
+
+    private void sendLangChooseSuccessMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, String successText) throws TelegramApiException {
+        SendMessage langChooseSuccessMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(successText);
+        bot.execute(langChooseSuccessMessage);
+    }
+
+    private void sendMainMenuMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) throws TelegramApiException {
+        SendMessage mainMenuMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("main-menu-message"));
+        setMenuKeyboard(mainMenuMessage, telegramUser.getLangISO());
+        bot.execute(mainMenuMessage);
     }
 
     private void setMenuKeyboard(SendMessage sendMessage, String langISO) {

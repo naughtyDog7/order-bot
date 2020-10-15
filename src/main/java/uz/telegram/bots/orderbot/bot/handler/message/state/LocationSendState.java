@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -63,12 +64,7 @@ class LocationSendState implements MessageState {
             Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             if (message.hasText()) {
-                String text = message.getText();
-                String btnBack = rb.getString("btn-back");
-                if (text.equals(btnBack))
-                    handleBack(bot, telegramUser, rb, order);
-                else
-                    badRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
+                handleMessageText(bot, telegramUser, message.getText(), rb, order);
             } else if (message.hasLocation()) {
                 Location location = message.getLocation();
                 handleLocation(bot, telegramUser, rb, order, location);
@@ -80,31 +76,67 @@ class LocationSendState implements MessageState {
         }
     }
 
-    private void handleLocation(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, Location location) {
-        TelegramLocation tLocation = TelegramLocation.of(location.getLatitude(), location.getLongitude());
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                   String messageText, ResourceBundle rb, Order order) {
+        String btnBack = rb.getString("btn-back");
+        if (messageText.equals(btnBack))
+            handleBack(bot, telegramUser, rb, order);
+        else
+            badRequestHandler.handleLocationBadRequest(bot, telegramUser, rb);
+    }
+
+    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        List<Category> categories = categoryService.findNonEmptyByOrderId(order.getId());
+        int basketNumItems = pwcService.getBasketItemsCount(order.getId());
+        ToOrderMainHandler.builder()
+                .bot(bot)
+                .service(userService)
+                .rb(rb)
+                .telegramUser(telegramUser)
+                .ku(ku)
+                .kf(kf)
+                .categories(categories)
+                .build()
+                .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
+    }
+
+    private void handleLocation(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                ResourceBundle rb, Order order, Location location) {
+        TelegramLocation tLocation = TelegramLocation.from(location);
         PaymentInfo paymentInfo = paymentInfoService.findByOrderId(order.getId());
         paymentInfo.setOrderLocation(tLocation);
         paymentInfo.setPaymentMethod(PaymentInfo.PaymentMethod.CASH); //Set method to cash because no other available for now
         paymentInfoService.save(paymentInfo);
 
+        StringBuilder finalConfirmationMessageText
+                = prepareFinalConfirmationMessageText(telegramUser, rb, order, paymentInfo);
+        try {
+            sendFinalConfirmationMessage(bot, telegramUser, finalConfirmationMessageText);
+            telegramUser.setCurState(UserState.FINAL_CONFIRMATION);
+            userService.save(telegramUser);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @NotNull
+    private StringBuilder prepareFinalConfirmationMessageText(TelegramUser telegramUser, ResourceBundle rb,
+                                                              Order order, PaymentInfo paymentInfo) {
         StringBuilder messageText = new StringBuilder(rb.getString("confirm-before-send-to-server")).append("\n");
         List<ProductWithCount> products = pwcService.findByOrderId(order.getId());
         tu.appendProducts(messageText, products, rb, true, order.getDeliveryPrice());
         tu.appendPhoneNum(messageText, telegramUser.getPhoneNum(), rb);
         tu.appendNoNameLocation(messageText, rb);
         tu.appendPaymentMethod(messageText, paymentInfo.getPaymentMethod(), rb);
+        return messageText;
+    }
 
-        SendMessage sendMessage = new SendMessage()
+    private void sendFinalConfirmationMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, StringBuilder finalConfirmationMessageText) throws TelegramApiException {
+        SendMessage finalConfirmationMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
-                .setText(messageText.toString());
-        setConfirmOrderKeyboard(sendMessage, telegramUser.getLangISO());
-        try {
-            bot.execute(sendMessage);
-            telegramUser.setCurState(UserState.FINAL_CONFIRMATION);
-            userService.save(telegramUser);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+                .setText(finalConfirmationMessageText.toString());
+        setConfirmOrderKeyboard(finalConfirmationMessage, telegramUser.getLangISO());
+        bot.execute(finalConfirmationMessage);
     }
 
     private void setConfirmOrderKeyboard(SendMessage sendMessage, String langISO) {
@@ -148,19 +180,4 @@ class LocationSendState implements MessageState {
         sendMessage.setReplyMarkup(ku.addBackButtonLast(keyboard, langISO)
                 .setResizeKeyboard(true));
     }*/
-
-    private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        List<Category> categories = categoryService.findNonEmptyByOrderId(order.getId());
-        int basketNumItems = pwcService.getBasketItemsCount(order.getId());
-        ToOrderMainHandler.builder()
-                .bot(bot)
-                .service(userService)
-                .rb(rb)
-                .telegramUser(telegramUser)
-                .ku(ku)
-                .kf(kf)
-                .categories(categories)
-                .build()
-                .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
-    }
 }

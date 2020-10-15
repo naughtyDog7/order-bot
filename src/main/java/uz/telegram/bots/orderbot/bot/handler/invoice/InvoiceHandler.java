@@ -49,10 +49,10 @@ public class InvoiceHandler implements Handler {
         try {
             lock.lock();
             PreCheckoutQuery pcq = update.getPreCheckoutQuery();
-            SendMessage sendMessage = new SendMessage()
+            SendMessage paymentSuccessMessage = new SendMessage()
                     .setChatId(telegramUser.getChatId())
                     .setText(rb.getString("payment-success"));
-            bot.execute(sendMessage);
+            bot.execute(paymentSuccessMessage);
             ToMainMenuHandler.builder()
                     .kf(kf)
                     .rb(rb)

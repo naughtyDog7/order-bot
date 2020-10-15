@@ -35,6 +35,8 @@ class WaitingOrderConfirmMessageState implements MessageState {
     private final JowiService jowiService;
     private final BadRequestHandler badRequestHandler;
 
+    private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
+
     @Autowired
     WaitingOrderConfirmMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                     OrderService orderService, KeyboardFactory kf, LockFactory lf, JowiService jowiService, BadRequestHandler badRequestHandler) {
@@ -55,15 +57,19 @@ class WaitingOrderConfirmMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
-        String text = message.getText();
-        String btnCancelOrder = rb.getString("btn-cancel-order");
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
+
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String messageText) {
+//        String btnCancelOrder = rb.getString("btn-cancel-order");
         String btnCheckStatus = rb.getString("btn-check-order-status");
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
             Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
-            if (text.equals(btnCheckStatus)) {
+            if (messageText.equals(btnCheckStatus)) {
                 handleCheckStatus(bot, telegramUser, rb, order);
             } /*else if (text.equals(btnCancelOrder)) {
                 handleCancelOrder(bot, telegramUser, rb, order);
@@ -75,22 +81,23 @@ class WaitingOrderConfirmMessageState implements MessageState {
         }
     }
 
+    private void handleCheckStatus(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        SendMessage waitingForServerResponseMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("waiting-for-order-confirm-message"));
+        try {
+            bot.execute(waitingForServerResponseMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void handleCancelOrder(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
         try {
             jowiService.cancelOrderOnServer(order, "Пользователь отменил заказ");
             orderService.deleteOrder(order);
-            SendMessage sendMessage = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("order-was-cancelled-by-user"));
-            bot.execute(sendMessage);
-            ToMainMenuHandler.builder()
-                    .rb(rb)
-                    .telegramUser(telegramUser)
-                    .bot(bot)
-                    .service(userService)
-                    .kf(kf)
-                    .build()
-                    .handleToMainMenu();
+            sendCancellationMessage(bot, telegramUser, rb.getString("order-was-cancelled-by-user"));
+            handleToMainMenu(bot, telegramUser, rb);
         } catch (IOException e) {
             JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
         } catch (TelegramApiException e) {
@@ -98,45 +105,22 @@ class WaitingOrderConfirmMessageState implements MessageState {
         }
     }
 
-    private static final ZoneId tashkentZoneId = ZoneId.of("GMT+5");
-
-    private void handleCheckStatus(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        /*if (LocalDateTime.now(tashkentZoneId).minusMinutes(5).isAfter(order.getRequestSendTime())) {
-            // if passed more than 5 minutes but still at this state, no one accepted order, so cancel it
-            handleTimeIsUp(bot, telegramUser, rb, order);
-        } else {*/
-            SendMessage sendMessage = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("waiting-for-order-confirm-message"));
-            try {
-                bot.execute(sendMessage);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-//        }
+    private void sendCancellationMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                         String newMessageText) throws TelegramApiException {
+        SendMessage cancellationMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(newMessageText);
+        bot.execute(cancellationMessage);
     }
 
-    private void handleTimeIsUp(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        try {
-            jowiService.cancelOrderOnServer(order, "Достигнут максимум ожидания");
-            orderService.deleteOrder(order);
-            SendMessage sendMessage = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("order-confirm-time-is-up"));
-            bot.execute(sendMessage);
-            ToMainMenuHandler.builder()
-                    .bot(bot)
-                    .telegramUser(telegramUser)
-                    .service(userService)
-                    .rb(rb)
-                    .kf(kf)
-                    .build()
-                    .handleToMainMenu();
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
-            throw new UncheckedIOException(e);
-        }
+    private void handleToMainMenu(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        ToMainMenuHandler.builder()
+                .rb(rb)
+                .telegramUser(telegramUser)
+                .bot(bot)
+                .service(userService)
+                .kf(kf)
+                .build()
+                .handleToMainMenu();
     }
 }

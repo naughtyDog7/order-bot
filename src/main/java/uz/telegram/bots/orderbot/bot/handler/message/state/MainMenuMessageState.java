@@ -1,6 +1,7 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -75,13 +76,14 @@ class MainMenuMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
 
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String messageText) {
         String settings = rb.getString("btn-main-menu-settings");
         String order = rb.getString("btn-main-menu-order");
         String contactUs = rb.getString("btn-main-menu-contact-us");
-
-        String messageText = message.getText();
-
         if (messageText.equals(settings))
             handleSettings(bot, telegramUser, rb);
         else if (messageText.equals(order))
@@ -93,13 +95,12 @@ class MainMenuMessageState implements MessageState {
     }
 
     private void handleSettings(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+        SendMessage settingsMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("configure-settings"));
-        ku.setSettingsKeyboard(sendMessage, rb, telegramUser.getLangISO(), kf, telegramUser.getPhoneNum() != null);
-
+        ku.setSettingsKeyboard(settingsMessage, rb, telegramUser.getLangISO(), kf, telegramUser.getPhoneNum() != null);
         try {
-            bot.execute(sendMessage);
+            bot.execute(settingsMessage);
             telegramUser.setCurState(SETTINGS);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {
@@ -111,82 +112,114 @@ class MainMenuMessageState implements MessageState {
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
-            if (orderService.findActive(telegramUser).isPresent()) {
-                SendMessage sendMessage = new SendMessage()
-                        .setChatId(telegramUser.getChatId())
-                        .setText(rb.getString("double-order-failure"));
-                try {
-                    bot.execute(sendMessage);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-
-            SendMessage loadingMessage = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("server-loading-message"));
-            try {
-                Message message = bot.execute(loadingMessage);
-                CompletableFuture<List<Restaurant>> future = CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return jowiService.fetchAndUpdateRestaurants();
-                    } catch (IOException e) {
-                        JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
-                        throw new UncheckedIOException(e);
-                    }
-                });
-                LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
-                List<Restaurant> restaurants = future.get(5, TimeUnit.SECONDS);
-                List<Restaurant> workingRestaurants = restaurants
-                        .stream()
-                        .filter(r -> restaurantService.isOpened(curTime, r))
-                        .collect(Collectors.toList());
-                DeleteMessage deleteLoadingMessage = new DeleteMessage()
-                        .setChatId(telegramUser.getChatId())
-                        .setMessageId(message.getMessageId());
-
-                bot.execute(deleteLoadingMessage);
-
-                if (workingRestaurants.size() == 0) {
-                    handleNoWorkingRestaurants(bot, telegramUser, rb);
-                    return;
-                }
-                StringBuilder text = new StringBuilder(rb.getString("choose-restaurant")).append("\n\n");
-                tu.appendRestaurants(text, restaurants, rb);
-                SendMessage sendMessage = new SendMessage()
-                        .setChatId(telegramUser.getChatId())
-                        .setText(text.toString());
-                setRestaurantsKeyboard(sendMessage, workingRestaurants, telegramUser.getLangISO());
-                bot.execute(sendMessage);
-                telegramUser.setCurState(RESTAURANT_CHOOSE);
-                userService.save(telegramUser);
-            } catch (TelegramApiException | ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-            } catch (TimeoutException e) {
-                JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
-                log.error("Jowi server timeout");
-            }
+            if (orderService.findActive(telegramUser).isPresent())
+                handleDoubleOrderFailure(bot, telegramUser, rb);
+            else
+                handleNewOrder(bot, telegramUser, rb);
         } finally {
             lock.unlock();
         }
     }
 
-    private void handleNoWorkingRestaurants(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+    private void handleDoubleOrderFailure(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                          ResourceBundle rb) {
+        SendMessage doubleOrderFailureMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("no-working-restaurants-for-now"));
+                .setText(rb.getString("double-order-failure"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(doubleOrderFailureMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
-    private void setRestaurantsKeyboard(SendMessage sendMessage, List<Restaurant> restaurants, String langISO) {
+    private void handleNewOrder(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                ResourceBundle rb) {
+        try {
+            Message serverLoadingMessage = sendServerLoadingMessage(bot, telegramUser, rb);
+            CompletableFuture<List<Restaurant>> future = getRestaurantsAsync(bot, telegramUser, rb);
+            LocalDateTime curTime = LocalDateTime.now(TASHKENT_ZONE_ID);
+            List<Restaurant> restaurants = future.get(5, TimeUnit.SECONDS);
+            List<Restaurant> workingRestaurants = restaurants
+                    .stream()
+                    .filter(r -> restaurantService.isOpened(curTime, r))
+                    .collect(Collectors.toList());
+            deleteLoadingMessage(bot, telegramUser, serverLoadingMessage);
+            if (workingRestaurants.size() == 0) {
+                handleNoWorkingRestaurants(bot, telegramUser, rb);
+            } else {
+                handleWorkingRestaurantsAvailable(bot, telegramUser, rb, restaurants, workingRestaurants);
+            }
+        } catch (TelegramApiException | ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        } catch (TimeoutException e) {
+            JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+            log.error("Jowi server timeout");
+        }
+    }
+
+    private Message sendServerLoadingMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                             ResourceBundle rb) throws TelegramApiException {
+        SendMessage loadingMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("server-loading-message"));
+        return bot.execute(loadingMessage);
+    }
+
+    @NotNull
+    private CompletableFuture<List<Restaurant>> getRestaurantsAsync(TelegramLongPollingBot bot,
+                                                                    TelegramUser telegramUser, ResourceBundle rb) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return jowiService.fetchAndUpdateRestaurants();
+            } catch (IOException e) {
+                JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    private void deleteLoadingMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                      Message message) throws TelegramApiException {
+        DeleteMessage deleteLoadingMessage = new DeleteMessage()
+                .setChatId(telegramUser.getChatId())
+                .setMessageId(message.getMessageId());
+        bot.execute(deleteLoadingMessage);
+    }
+
+    private void handleNoWorkingRestaurants(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                            ResourceBundle rb) throws TelegramApiException {
+        SendMessage noWorkingRestaurantsMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("no-working-restaurants-for-now"));
+        bot.execute(noWorkingRestaurantsMessage);
+    }
+
+    private void handleWorkingRestaurantsAvailable(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                                   ResourceBundle rb, List<Restaurant> restaurants,
+                                                   List<Restaurant> workingRestaurants) throws TelegramApiException {
+        String restaurantMessageText = prepareRestaurantsMessageText(rb, restaurants);
+        SendMessage restaurantsMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(restaurantMessageText);
+        setRestaurantsKeyboard(restaurantsMessage, workingRestaurants, telegramUser.getLangISO());
+        bot.execute(restaurantsMessage);
+        telegramUser.setCurState(RESTAURANT_CHOOSE);
+        userService.save(telegramUser);
+    }
+
+    @NotNull
+    private String prepareRestaurantsMessageText(ResourceBundle rb, List<Restaurant> restaurants) {
+        StringBuilder text = new StringBuilder(rb.getString("choose-restaurant")).append("\n\n");
+        tu.appendRestaurants(text, restaurants, rb);
+        return text.toString();
+    }
+
+    private void setRestaurantsKeyboard(SendMessage sendMessage, List<Restaurant> restaurants,
+                                        String langISO) {
         List<KeyboardRow> rows = new ArrayList<>();
         ku.addRestaurantsToRows(rows, restaurants);
         ReplyKeyboardMarkup keyboard = ku.addBackButtonLast(rows, langISO);
@@ -196,13 +229,14 @@ class MainMenuMessageState implements MessageState {
         sendMessage.setReplyMarkup(keyboard.setResizeKeyboard(true));
     }
 
-    private void handleContactUs(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        SendMessage sendMessage = new SendMessage()
+    private void handleContactUs(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                 ResourceBundle rb) {
+        SendMessage contactUsMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("contact-us-message"));
-        setContactUsKeyboard(sendMessage, telegramUser.getLangISO());
+        setContactUsKeyboard(contactUsMessage, telegramUser.getLangISO());
         try {
-            bot.execute(sendMessage);
+            bot.execute(contactUsMessage);
             telegramUser.setCurState(CONTACT_US);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {

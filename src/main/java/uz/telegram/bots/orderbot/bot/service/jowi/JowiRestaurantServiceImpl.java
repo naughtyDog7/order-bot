@@ -100,7 +100,7 @@ class JowiRestaurantServiceImpl implements JowiRestaurantService {
                 .filter(d -> d.getTimetableCode() == 1)
                 .collect(Collectors.toMap(d -> DayOfWeek.of(d.getDayCode()), DayDto::toWorkingTime,
                         (f, s) -> s, () -> new EnumMap<>(DayOfWeek.class)));
-        TelegramLocation location = TelegramLocation.of(restaurantDto.getLatitude(), restaurantDto.getLongitude());
+        TelegramLocation location = TelegramLocation.from(restaurantDto.getLatitude(), restaurantDto.getLongitude());
         Restaurant restaurant;
         restaurant = Objects.requireNonNullElseGet(oldRestaurant, Restaurant::new);
         restaurant.setRestaurantId(restaurantDto.getId());

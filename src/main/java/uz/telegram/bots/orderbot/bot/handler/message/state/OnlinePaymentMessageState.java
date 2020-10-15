@@ -24,11 +24,11 @@ class OnlinePaymentMessageState implements MessageState {
     @Override
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
-        SendMessage sendMessage = new SendMessage()
+        SendMessage payBillMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("please-pay-bill"));
         try {
-            bot.execute(sendMessage);
+            bot.execute(payBillMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

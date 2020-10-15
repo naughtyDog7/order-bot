@@ -77,24 +77,12 @@ public class KeyboardUtilImpl implements KeyboardUtil {
     @Override
     public void setProductNumChoose(SendMessage sendMessage, String langISO, Product product) {
         int countLeft = product.getCountLeft();
-        int buttonsNum = Math.min(countLeft, 9); //default num is 9 buttons, but if less than 9 left, then countLeft buttons
-
+        int buttonsNum = Math.min(countLeft, 9);
+        //default num is 9 buttons, but if less than 9 left, then countLeft buttons
         int buttonsInFullRows = buttonsNum - buttonsNum % 3;
         List<KeyboardRow> rows = new ArrayList<>();
-        for (int i = 1; i < buttonsInFullRows + 1; i += 3) {
-            KeyboardRow keyboardRow = new KeyboardRow();
-            for (int j = 0; j < 3; j++) {
-                keyboardRow.add(String.valueOf(i + j));
-            }
-            rows.add(keyboardRow);
-        }
-        {
-            KeyboardRow keyboardRow = new KeyboardRow();
-            for (int i = buttonsInFullRows + 1; i < buttonsNum + 1; i++) {
-                keyboardRow.add(String.valueOf(i));
-            }
-            rows.add(keyboardRow);
-        }
+        addFullRows(buttonsInFullRows, rows);
+        addLastRow(buttonsNum, buttonsInFullRows, rows);
         ReplyKeyboardMarkup keyboard = addBackButtonLast(rows, langISO);
         int size = keyboard.getKeyboard().size();
         if (size >= 2) {
@@ -105,6 +93,24 @@ public class KeyboardUtilImpl implements KeyboardUtil {
         }
         sendMessage.setReplyMarkup(keyboard
                 .setResizeKeyboard(true));
+    }
+
+    private void addFullRows(int buttonsInFullRows, List<KeyboardRow> rows) {
+        for (int i = 1; i < buttonsInFullRows + 1; i += 3) {
+            KeyboardRow keyboardRow = new KeyboardRow();
+            for (int j = 0; j < 3; j++) {
+                keyboardRow.add(String.valueOf(i + j));
+            }
+            rows.add(keyboardRow);
+        }
+    }
+
+    private void addLastRow(int buttonsNum, int buttonsInFullRows, List<KeyboardRow> rows) {
+        KeyboardRow keyboardRow = new KeyboardRow();
+        for (int i = buttonsInFullRows + 1; i < buttonsNum + 1; i++) {
+            keyboardRow.add(String.valueOf(i));
+        }
+        rows.add(keyboardRow);
     }
 
     @Override

@@ -102,12 +102,12 @@ public class ProductServiceImpl implements ProductService {
 
     private void notifyUsersAboutDelete(Product product, TelegramUser telegramUser, TelegramLongPollingBot bot) {
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
-        SendMessage sendMessage = new SendMessage()
+        SendMessage productRemovedMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("product-on-server-deleted-and-removed-from-basket")
                         .replace("{productName}", product.getName()));
         try {
-            bot.execute(sendMessage);
+            bot.execute(productRemovedMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

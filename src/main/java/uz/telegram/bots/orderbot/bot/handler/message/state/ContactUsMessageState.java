@@ -42,41 +42,12 @@ class ContactUsMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
-        String text = message.getText();
+        String messageText = message.getText();
 
-        if (text.equals(rb.getString("btn-back")))
+        if (messageText.equals(rb.getString("btn-back")))
             handleBack(bot, telegramUser, rb);
         else
             handleComment(update, bot, telegramUser, rb);
-    }
-
-    private void handleComment(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
-        List<TelegramUser> commentReceivers = service.findCommentReceivers();
-        String commentText = update.getMessage().getText();
-
-
-        try {
-            if (!commentReceivers.isEmpty()) {
-                for (TelegramUser receiver : commentReceivers) {
-                    SendMessage sendMessage = new SendMessage()
-                            .setText("Comment:\n" + update.getMessage().getText())
-                            .setChatId(receiver.getChatId())
-                            .disableNotification();
-                    bot.execute(sendMessage);
-                }
-            } else {
-                log.warn("Received comment \"" + commentText + "\", but no receivers found");
-            }
-
-            SendMessage sendMessageToUser = new SendMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setText(rb.getString("contact-us-success"));
-
-            bot.execute(sendMessageToUser);
-            handleBack(bot, telegramUser, rb);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
     }
 
     private void handleBack(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
@@ -90,5 +61,40 @@ class ContactUsMessageState implements MessageState {
                 .handleToMainMenu();
     }
 
+    private void handleComment(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) {
+        String commentText = update.getMessage().getText();
+        try {
+            sendCommentToReceivers(update, bot, commentText);
+            sendSuccessMessageToUser(bot, telegramUser, rb);
+            handleBack(bot, telegramUser, rb);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private void sendCommentToReceivers(Update update, TelegramLongPollingBot bot, String commentText) {
+        List<TelegramUser> commentReceivers = service.findCommentReceivers();
+        if (!commentReceivers.isEmpty()) {
+            for (TelegramUser receiver : commentReceivers) {
+                SendMessage commentMessage = new SendMessage()
+                        .setText("Comment:\n" + update.getMessage().getText())
+                        .setChatId(receiver.getChatId())
+                        .disableNotification();
+                try {
+                    bot.execute(commentMessage);
+                } catch (TelegramApiException ignored) {
+                    //If we cant send comment to comment receiver, just skip
+                }
+            }
+        } else {
+            log.warn("Received comment \"" + commentText + "\", but no receivers found");
+        }
+    }
+
+    private void sendSuccessMessageToUser(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb) throws TelegramApiException {
+        SendMessage thanksForCommentMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("contact-us-success"));
+        bot.execute(thanksForCommentMessage);
+    }
 }

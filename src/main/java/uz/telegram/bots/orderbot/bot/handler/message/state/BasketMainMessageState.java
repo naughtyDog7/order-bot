@@ -1,5 +1,6 @@
 package uz.telegram.bots.orderbot.bot.handler.message.state;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -60,75 +61,24 @@ class BasketMainMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
+
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String messageText) {
         String btnBack = rb.getString("btn-back");
-        String text = message.getText();
         Lock lock = lf.getResourceLock();
         try {
             lock.lock();
             Order order = orderService.findActive(telegramUser)
                     .orElseThrow(() -> new AssertionError("Order must be present at this point"));
             int basketNumItems = productWithCountService.getBasketItemsCount(order.getId());
-            if (text.equals(btnBack)) {
+            if (messageText.equals(btnBack))
                 handleBack(bot, telegramUser, rb, order, basketNumItems);
-                return;
-            }
-            String removeProductCharText = rb.getString("remove-product-char");
-            text = text.replace(removeProductCharText, "").strip(); //remove ❌ to get clean product name
-
-            Optional<ProductWithCount> optProduct = productWithCountService.findByOrderIdAndProductName(order.getId(), text);
-            String finalProductName = text;
-            optProduct.ifPresentOrElse(product -> handleItemDelete(bot, telegramUser, rb, order, product, finalProductName, basketNumItems),
-                    () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+            else
+                handlePotentialProductDelete(bot, telegramUser, rb, order, basketNumItems, messageText);
         } finally {
             lock.unlock();
-        }
-    }
-
-    private void handleItemDelete(TelegramLongPollingBot bot, TelegramUser telegramUser,
-                                  ResourceBundle rb, Order order, ProductWithCount productWithCount, String productName, int basketNumItems) {
-        int count = productWithCount.getCount();
-        Product product = productService.fromProductWithCount(productWithCount.getId());
-        product.setCountLeft(product.getCountLeft() + count);
-        productService.save(product);
-        productWithCountService.deleteById(productWithCount.getId());
-        //if no products left, go back to order main
-        if (basketNumItems == 1) {
-            handleNoItemsLeft(bot, telegramUser, rb, order);
-        } else {
-            handleAfterItemDeleted(bot, telegramUser, rb, order, productName);
-        }
-    }
-
-    private void handleAfterItemDeleted(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order, String productName) {
-        SendMessage sendMessage1 = new SendMessage()
-                .setText(rb.getString("deleted") + "❌ " + productName)
-                .setChatId(telegramUser.getChatId());
-        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
-
-        String text = tu.appendProducts(new StringBuilder(), products, rb, false, -1).toString();
-        SendMessage sendMessage2 = new SendMessage()
-                .setText(text)
-                .setChatId(telegramUser.getChatId());
-
-        ku.setBasketKeyboard(productService, sendMessage2, products, rb, telegramUser.getLangISO());
-        try {
-            bot.execute(sendMessage1);
-            bot.execute(sendMessage2);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void handleNoItemsLeft(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("basket-has-been-emptied"));
-
-        try {
-            bot.execute(sendMessage);
-            handleBack(bot, telegramUser, rb, order, 0);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
         }
     }
 
@@ -144,5 +94,74 @@ class BasketMainMessageState implements MessageState {
                 .categories(categories)
                 .build()
                 .handleToOrderMain(basketNumItems, ToOrderMainHandler.CallerPlace.OTHER);
+    }
+
+    private void handlePotentialProductDelete(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                              ResourceBundle rb, Order order, int basketNumItems, String messageText) {
+        String removeProductCharText = rb.getString("remove-product-char");
+        String potentialProductName
+                = messageText.replace(removeProductCharText, "").strip(); //remove ❌ to get clean product name
+
+        Optional<ProductWithCount> optProduct
+                = productWithCountService.findByOrderIdAndProductName(order.getId(), potentialProductName);
+        optProduct.ifPresentOrElse(product -> handleItemDelete(bot, telegramUser, rb, order, product, basketNumItems),
+                () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+    }
+
+    private void handleItemDelete(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                  ResourceBundle rb, Order order, ProductWithCount productWithCount, int basketNumItems) {
+        Product product = deletePwcFromBasket(productWithCount);
+        //if no products left, go back to order main
+        if (basketNumItems - 1 == 0) {
+            handleNoItemsLeft(bot, telegramUser, rb, order);
+        } else {
+            handleAfterItemDeleted(bot, telegramUser, rb, order, product.getName());
+        }
+    }
+
+    @NotNull
+    private Product deletePwcFromBasket(ProductWithCount productWithCount) {
+        int count = productWithCount.getCount();
+        Product product = productService.fromProductWithCount(productWithCount.getId());
+        product.setCountLeft(product.getCountLeft() + count);
+        productService.save(product);
+        productWithCountService.deleteById(productWithCount.getId());
+        return product;
+    }
+
+    private void handleNoItemsLeft(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Order order) {
+        SendMessage noItemsLeftInBasketMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("basket-has-been-emptied"));
+        try {
+            bot.execute(noItemsLeftInBasketMessage);
+            handleBack(bot, telegramUser, rb, order, 0);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleAfterItemDeleted(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                        ResourceBundle rb, Order order, String productName) {
+        SendMessage productDeletedMessage = new SendMessage()
+                .setText(rb.getString("deleted") + "❌ " + productName)
+                .setChatId(telegramUser.getChatId());
+        List<ProductWithCount> products = productWithCountService.findByOrderId(order.getId());
+        try {
+            bot.execute(productDeletedMessage);
+            sendUpdatedBasketMessage(bot, telegramUser, rb, products);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendUpdatedBasketMessage(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, List<ProductWithCount> products) throws TelegramApiException {
+        String text = tu.appendProducts(new StringBuilder(), products, rb, false, -1).toString();
+        SendMessage updatedBasketMessage = new SendMessage()
+                .setText(text)
+                .setChatId(telegramUser.getChatId());
+        ku.setBasketKeyboard(productService, updatedBasketMessage,
+                products, rb, telegramUser.getLangISO());
+        bot.execute(updatedBasketMessage);
     }
 }

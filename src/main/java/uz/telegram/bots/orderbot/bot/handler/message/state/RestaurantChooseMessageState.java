@@ -45,6 +45,8 @@ class RestaurantChooseMessageState implements MessageState {
     private final LockFactory lf;
     private final BadRequestHandler badRequestHandler;
 
+    private static final ZoneId TASHKENT_ZONE_ID = ZoneId.of("GMT+5");
+
     @Autowired
     RestaurantChooseMessageState(ResourceBundleFactory rbf, TelegramUserService userService,
                                  RestaurantService restaurantService, CategoryService categoryService,
@@ -71,24 +73,16 @@ class RestaurantChooseMessageState implements MessageState {
             badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
             return;
         }
-        String text = message.getText();
-        String btnBack = rb.getString("btn-back");
+        String messageText = message.getText();
+        handleMessageText(bot, telegramUser, rb, messageText);
+    }
 
-        if (text.equals(btnBack)) {
+    private void handleMessageText(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, String messageText) {
+        String btnBack = rb.getString("btn-back");
+        if (messageText.equals(btnBack)) {
             handleBack(bot, telegramUser, rb);
         } else {
-            Lock lock = lf.getResourceLock();
-            try {
-                lock.lock();
-                Optional<Restaurant> optRestaurant = restaurantService.findByTitle(text);
-                if (optRestaurant.isEmpty()) {
-                    badRequestHandler.handleTextBadRequest(bot, telegramUser, rb);
-                } else {
-                    handleRestaurant(bot, telegramUser, rb, optRestaurant.get());
-                }
-            } finally {
-                lock.unlock();
-            }
+            handlePotentialRestaurantName(bot, telegramUser, rb, messageText);
         }
     }
 
@@ -103,51 +97,42 @@ class RestaurantChooseMessageState implements MessageState {
                 .handleToMainMenu();
     }
 
-    private static final ZoneId TASHKENT_ZONE_ID = ZoneId.of("GMT+5");
+
+    private void handlePotentialRestaurantName(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                               ResourceBundle rb, String potentialRestaurantName) {
+        Lock lock = lf.getResourceLock();
+        try {
+            lock.lock();
+            Optional<Restaurant> optRestaurant
+                    = restaurantService.findByTitle(potentialRestaurantName);
+            optRestaurant.ifPresentOrElse(
+                    restaurant -> handleRestaurant(bot, telegramUser, rb, restaurant),
+                    () -> badRequestHandler.handleTextBadRequest(bot, telegramUser, rb));
+        } finally {
+            lock.unlock();
+        }
+    }
 
     private void handleRestaurant(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Restaurant restaurant) {
 
-        if (!restaurantService.isOpened(LocalDateTime.now(TASHKENT_ZONE_ID), restaurant)) {
+        if (!restaurantService.isOpened(LocalDateTime.now(TASHKENT_ZONE_ID), restaurant))
             badRequestHandler.handleRestaurantClosed(bot, telegramUser, rb);
-            return;
-        }
-        SendMessage loadingMessage = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("server-loading-message"));
+        else
+            handleOpenedRestaurant(bot, telegramUser, rb, restaurant);
+
+    }
+
+    private void handleOpenedRestaurant(TelegramLongPollingBot bot, TelegramUser telegramUser, ResourceBundle rb, Restaurant restaurant) {
         try {
-            Message message = bot.execute(loadingMessage);
-            CompletableFuture<List<Category>> future = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId(), bot, telegramUser);
-                } catch (IOException e) {
-                    JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
-                    throw new UncheckedIOException(e);
-                }
-            });
+            Message serverLoadingMessage = sendServerLoadingMessage(bot, telegramUser, rb);
+            CompletableFuture<List<Category>> future
+                    = getCategoriesAsync(bot, telegramUser, rb, restaurant);
             List<Category> categories = future.get(5, TimeUnit.SECONDS);
-
             if (!categories.isEmpty()) {
-                Order order = new Order(telegramUser);
-                PaymentInfo paymentInfo = new PaymentInfo();
-                paymentInfo.setFromRestaurant(restaurant);
-                order.setPaymentInfo(paymentInfo);
-                orderService.save(order);
+                initializeNewOrder(telegramUser, restaurant);
             }
-
-            DeleteMessage deleteLoadingMessage = new DeleteMessage()
-                    .setChatId(telegramUser.getChatId())
-                    .setMessageId(message.getMessageId());
-            bot.execute(deleteLoadingMessage);
-            ToOrderMainHandler.builder()
-                    .bot(bot)
-                    .telegramUser(telegramUser)
-                    .service(userService)
-                    .ku(ku)
-                    .kf(kf)
-                    .rb(rb)
-                    .categories(categories)
-                    .build()
-                    .handleToOrderMain(0, ToOrderMainHandler.CallerPlace.MAIN_MENU);
+            deleteLoadingMessage(bot, telegramUser, serverLoadingMessage);
+            handleToOrderMain(bot, telegramUser, rb, categories);
         } catch (TelegramApiException | ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -159,4 +144,53 @@ class RestaurantChooseMessageState implements MessageState {
         }
     }
 
+    private Message sendServerLoadingMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                             ResourceBundle rb) throws TelegramApiException {
+        SendMessage loadingMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("server-loading-message"));
+        return bot.execute(loadingMessage);
+    }
+
+    private CompletableFuture<List<Category>> getCategoriesAsync(TelegramLongPollingBot bot,
+                                                                 TelegramUser telegramUser, ResourceBundle rb, Restaurant restaurant) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return jowiService.updateAndFetchNonEmptyCategories(restaurant.getRestaurantId(), bot, telegramUser);
+            } catch (IOException e) {
+                JowiServerFailureHandler.handleServerFail(bot, telegramUser, rb);
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    private void deleteLoadingMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                      Message sendServerLoadingMessage) throws TelegramApiException {
+        DeleteMessage deleteLoadingMessage = new DeleteMessage()
+                .setChatId(telegramUser.getChatId())
+                .setMessageId(sendServerLoadingMessage.getMessageId());
+        bot.execute(deleteLoadingMessage);
+    }
+
+    private void initializeNewOrder(TelegramUser telegramUser, Restaurant restaurant) {
+        Order order = new Order(telegramUser);
+        PaymentInfo paymentInfo = new PaymentInfo();
+        paymentInfo.setFromRestaurant(restaurant);
+        order.setPaymentInfo(paymentInfo);
+        orderService.save(order);
+    }
+
+    private void handleToOrderMain(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                   ResourceBundle rb, List<Category> categories) {
+        ToOrderMainHandler.builder()
+                .bot(bot)
+                .telegramUser(telegramUser)
+                .service(userService)
+                .ku(ku)
+                .kf(kf)
+                .rb(rb)
+                .categories(categories)
+                .build()
+                .handleToOrderMain(0, ToOrderMainHandler.CallerPlace.MAIN_MENU);
+    }
 }

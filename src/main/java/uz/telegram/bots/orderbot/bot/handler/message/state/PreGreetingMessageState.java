@@ -25,7 +25,8 @@ class PreGreetingMessageState implements MessageState {
     private final KeyboardFactory kf;
 
     @Autowired
-    PreGreetingMessageState(ResourceBundleFactory rbf, TelegramUserService service, KeyboardFactory kf) {
+    PreGreetingMessageState(ResourceBundleFactory rbf, TelegramUserService service,
+                            KeyboardFactory kf) {
         this.rbf = rbf;
         this.service = service;
         this.kf = kf;
@@ -36,21 +37,31 @@ class PreGreetingMessageState implements MessageState {
     public void handle(Update update, TelegramLongPollingBot bot, TelegramUser telegramUser) {
         log.info("New user registered: " + telegramUser);
         ResourceBundle rb = rbf.getMessagesBundle(telegramUser.getLangISO());
-        SendMessage sendMessage1 = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("greeting"));
-        SendMessage sendMessage2 = new SendMessage()
-                .setChatId(telegramUser.getChatId())
-                .setText(rb.getString("language-choose"));
-        setLangKeyboard(sendMessage2);
         try {
-            bot.execute(sendMessage1);
-            bot.execute(sendMessage2);
+            sendGreetingMessage(bot, telegramUser, rb);
+            sendChooseLangMessage(bot, telegramUser, rb);
             telegramUser.setCurState(UserState.FIRST_LANGUAGE_CONFIGURE);
             service.save(telegramUser);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    private void sendGreetingMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                     ResourceBundle rb) throws TelegramApiException {
+        SendMessage greetingMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("greeting"));
+        bot.execute(greetingMessage);
+    }
+
+    private void sendChooseLangMessage(TelegramLongPollingBot bot, TelegramUser telegramUser,
+                                       ResourceBundle rb) throws TelegramApiException {
+        SendMessage langChooseMessage = new SendMessage()
+                .setChatId(telegramUser.getChatId())
+                .setText(rb.getString("language-choose"));
+        setLangKeyboard(langChooseMessage);
+        bot.execute(langChooseMessage);
     }
 
     private void setLangKeyboard(SendMessage sendMessage) {

@@ -29,14 +29,14 @@ public class ToMainMenuHandler {
         Objects.requireNonNull(service);
         Objects.requireNonNull(kf);
 
-        SendMessage sendMessage = new SendMessage()
+        SendMessage createOrderMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("main-menu-message"));
 
-        setMenuKeyboard(sendMessage, telegramUser.getLangISO());
+        setMenuKeyboard(createOrderMessage, telegramUser.getLangISO());
 
         try {
-            bot.execute(sendMessage);
+            bot.execute(createOrderMessage);
             telegramUser.setCurState(MAIN_MENU);
             service.save(telegramUser);
         } catch (TelegramApiException e) {

@@ -39,14 +39,14 @@ class ToCategoryMainHandler {
         Objects.requireNonNull(ku);
         Objects.requireNonNull(products);
 
-        SendMessage sendMessage = new SendMessage()
+        SendMessage chooseProductMessage = new SendMessage()
                 .setChatId(telegramUser.getChatId())
                 .setText(rb.getString("choose-course"));
 
-        setProductsKeyboard(sendMessage, telegramUser.getLangISO(), products);
+        setProductsKeyboard(chooseProductMessage, telegramUser.getLangISO(), products);
 
         try {
-            bot.execute(sendMessage);
+            bot.execute(chooseProductMessage);
             telegramUser.setCurState(CATEGORY_MAIN);
             userService.save(telegramUser);
         } catch (TelegramApiException e) {
